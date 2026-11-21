@@ -52,5 +52,6 @@ void runAtmosphereTests();
 void runConstantsTests();
 void runDragTests();
 void runOrbitTests();
+void runStandardAtmosphere1976Tests();
 void runUnitsTests();
 void runVersionTests();

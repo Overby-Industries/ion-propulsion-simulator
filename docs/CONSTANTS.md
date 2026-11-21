@@ -9,6 +9,7 @@ Every constant the simulator uses, where it comes from, and what has and has not
 | Earth gravitational parameter, atmosphere included | GM | 3.986004418e14 m^3/s^2 | WGS 84 defining parameter |
 | Earth nominal mean angular velocity | omega | 7.292115e-5 rad/s | WGS 84 defining parameter |
 | Second-degree zonal harmonic | J2 | 1.0826298213133063e-3 | Derived from the four above |
+| Sea-level density, 1976 US Standard Atmosphere | rho_0 | 1.2250 kg/m^3 | Table 10 of the report (document page 20, PDF page 36), where it is a calculated value. The divisor of the printed `rho/rho_0` column. Used only to cross-check the transcribed density table, in `tests/` and `tools/`; the simulation itself does not use it. See [ATMOSPHERE.md](ATMOSPHERE.md) |
 
 ## Where the values came from
 

@@ -40,10 +40,13 @@ if(ABEP_BUILD_TESTS)
         tests/test_constants.cpp
         tests/test_drag.cpp
         tests/test_orbit.cpp
+        tests/test_standard_atmosphere_1976.cpp
         tests/test_units.cpp
         tests/test_version.cpp
     )
     target_link_libraries(abep_tests PRIVATE abep)
+    # The standard-atmosphere test reads the transcribed table from data/.
+    target_compile_definitions(abep_tests PRIVATE ABEP_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
     set_target_properties(abep_tests PROPERTIES CXX_EXTENSIONS OFF)
 
     if(MSVC)
