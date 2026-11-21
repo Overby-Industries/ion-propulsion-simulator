@@ -18,4 +18,9 @@ inline constexpr double kEarthRotationRate = 7.292115e-5;     // rad/s
 // if this literal drifts.
 inline constexpr double kEarthJ2 = 1.0826298213133063e-3;
 
+// Nominal total solar irradiance at 1 au: IAU 2015 Resolution B3 (Prsa et al. 2016, AJ 152, 41). A conversion
+// constant fixed by convention, not a measurement. The Earth-Sun distance changes the real value by about 3%
+// either way through the year; that is not modelled.
+inline constexpr double kSolarConstant = 1361.0;  // W/m^2
+
 }  // namespace abep::constants

@@ -39,8 +39,12 @@ if(ABEP_BUILD_TESTS)
         tests/test_atmosphere.cpp
         tests/test_constants.cpp
         tests/test_drag.cpp
+        tests/test_eclipse.cpp
         tests/test_orbit.cpp
+        tests/test_power.cpp
+        tests/test_romano2018.cpp
         tests/test_standard_atmosphere_1976.cpp
+        tests/test_thrust.cpp
         tests/test_units.cpp
         tests/test_version.cpp
     )
