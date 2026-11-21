@@ -64,6 +64,8 @@ The report's introduction (Part 1) calls it an idealized, steady-state represent
 - **Altitude.** The table is indexed by geometric altitude above mean sea level. The simulator looks it up at the height above the WGS 84 ellipsoid (see finding 6 in [VALIDATION.md](VALIDATION.md)); the geoid is within roughly 100 m of the ellipsoid, which is about 0.2% in density at 400 km and is ignored.
 - **Air co-rotates** with Earth in the drag calculation; the standard has nothing to say about winds.
 
+**How far it is from another model.** Against the NRLMSISE-00 density at average solar activity (F10.7 = 140, Ap = 15) plotted by Romano et al. (2018), whose date and place are not stated, the standard's density is 1.34 times higher at 120 km, 1.20 at 150 km, 1.06 at 200 km and 1.11 at 250 km. That is the size of the difference between two reasonable atmospheres at the altitudes ABEP needs ([VALIDATION.md](VALIDATION.md), finding 11; [ABEP_MODEL.md](ABEP_MODEL.md)).
+
 ## Using a different atmosphere
 
 `DensityTable` accepts any strictly increasing altitude and positive density table, so a low- or high-solar-activity profile can be swapped in as soon as one with a citable source is added. That is the natural next step for a sensitivity tool, and the most useful contribution here: a published density-versus-altitude table for solar minimum or maximum (see [CONTRIBUTING.md](../CONTRIBUTING.md)).

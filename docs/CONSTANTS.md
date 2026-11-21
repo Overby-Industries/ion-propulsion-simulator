@@ -9,6 +9,7 @@ Every constant the simulator uses, where it comes from, and what has and has not
 | Earth gravitational parameter, atmosphere included | GM | 3.986004418e14 m^3/s^2 | WGS 84 defining parameter |
 | Earth nominal mean angular velocity | omega | 7.292115e-5 rad/s | WGS 84 defining parameter |
 | Second-degree zonal harmonic | J2 | 1.0826298213133063e-3 | Derived from the four above |
+| Solar irradiance at 1 au | S | 1361 W/m^2 | IAU 2015 Resolution B3 nominal total solar irradiance; see below |
 | Sea-level density, 1976 US Standard Atmosphere | rho_0 | 1.2250 kg/m^3 | Table 10 of the report (document page 20, PDF page 36), where it is a calculated value. The divisor of the printed `rho/rho_0` column. Used only to cross-check the transcribed density table, in `tests/` and `tools/`; the simulation itself does not use it. See [ATMOSPHERE.md](ATMOSPHERE.md) |
 
 ## Where the values came from
@@ -37,6 +38,10 @@ Cross-check against a published number: the AHRS page prints the ellipsoid's nor
 
 EGM2008's empirical C2,0 (`-4.84165143790815e-4`, also on the AHRS page) describes the real Earth's field rather than the ellipsoid, and differs from the ellipsoid-derived value by 3.4e-6 relative. The ellipsoid-derived J2 is used here because it is consistent with the other four constants by construction.
 
+## The solar constant
+
+`S` = 1361 W/m^2 is the nominal total solar irradiance of IAU 2015 Resolution B3, which Prša et al. (2016, *Astronomical Journal* 152, 41, [doi:10.3847/0004-6256/152/2/41](https://doi.org/10.3847/0004-6256/152/2/41)) explain: the solar cycle 23 average, with a 2-sigma uncertainty of 1 W/m^2 in the resolution. It is a conversion constant fixed by convention, not a best estimate of the measured value. It is used by `solar_array_power`. The real irradiance changes by about 3% either way through the year with the Earth-Sun distance, which the simulator does not model. Read from the resolution's text as quoted in the search results for the paper; the resolution itself (IAU 2015 B3) was not opened.
+
 ## Still to pin
 
-The solar constant, needed for the power model, is added with its source when that model is written.
+Nothing in this table. The ABEP model's own parameters (thrust density, exhaust velocity, capture efficiency) are inputs, and their sources and gaps are in [ABEP_MODEL.md](ABEP_MODEL.md).
