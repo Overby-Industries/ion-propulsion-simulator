@@ -1,0 +1,20 @@
+# Build output
+build/
+build-*/
+out/
+cmake-build-*/
+
+# Simulation output (regenerate it; commit the inputs, not the results)
+*.csv
+!docs/**/*.csv
+!tests/**/*.csv
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Python bindings, later
+__pycache__/
+*.egg-info/
