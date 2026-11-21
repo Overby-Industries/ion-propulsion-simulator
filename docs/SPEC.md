@@ -14,7 +14,7 @@ SI internally. The unit shown is how the value is usually quoted and accepted.
 
 | Input | Symbol | Unit | Notes |
 |---|---|---|---|
-| Altitude | h | km | Initial altitude above the equatorial radius. Near-circular orbits in v0.1. |
+| Altitude | h | km | Orbit radius minus the equatorial radius, for a circular orbit (so the altitude at the equator). The altitude used for density is computed along the orbit from the ellipsoid; see Method. Near-circular orbits in v0.1. |
 | Inclination | i | deg | Needed for J2 precession and for eclipse geometry. |
 | Mass | m | kg | **Not in the original input list**, but drag deceleration is force divided by mass, so altitude over time cannot be computed without it. |
 | Frontal area | A | m^2 | Held constant; there is no attitude dynamics. |
@@ -40,9 +40,10 @@ Results are written as CSV. Python bindings (pybind11) for plotting come later.
 
 ## Method (v0.1)
 
-- **Frame and units.** Earth-centred inertial, SI. Spherical Earth with the J2 oblateness term; no higher harmonics, no third bodies, no solar radiation pressure.
+- **Frame and units.** Earth-centred inertial, SI. Gravity is a point mass plus the J2 term, which carries Earth's oblateness; no higher harmonics, no third bodies, no solar radiation pressure.
 - **Integration.** Fixed-step RK4. Deterministic: no adaptive steps, no random numbers, no fast-math.
-- **Atmosphere.** A static standard-atmosphere density profile, source to be pinned. The air co-rotates with Earth, so drag uses velocity relative to it.
+- **Altitude.** For the density lookup, the distance above the WGS 84 ellipsoid along the geocentric radius. Measuring against the equatorial radius instead would be wrong by up to 21 km at the poles (13 km at 51.6 deg latitude), which changes density by tens of percent; this form is within 5 m of true geodetic height at LEO altitudes.
+- **Atmosphere.** Density interpolated, exponentially between nodes, from a tabulated static profile; outside the table's range the run stops rather than guessing. The intended table is the US Standard Atmosphere 1976, to be added once its values have been checked against the printed report (see [VALIDATION.md](VALIDATION.md), finding 4); no density data is included yet. The air co-rotates with Earth, so drag uses velocity relative to it.
 - **Drag.** `a = -1/2 * rho * (Cd * A / m) * |v_rel| * v_rel`.
 - **Thrust.** Along the velocity vector; magnitude from the ABEP model.
 - **Power.** Sunlight and eclipse from a cylindrical Earth shadow.
@@ -54,7 +55,7 @@ Attitude dynamics. Plasma or thruster physics. Density variation with solar and 
 
 ## Constants
 
-Pinned, with sources, in `docs/CONSTANTS.md` when the propagator is written: Earth's gravitational parameter, equatorial radius, J2, rotation rate and the solar constant. No value is quoted here because none has been checked against its source yet.
+Pinned, with sources and what has been checked, in [CONSTANTS.md](CONSTANTS.md): Earth's gravitational parameter, equatorial radius, flattening, rotation rate and J2. The solar constant is added with its source when the power model is written.
 
 ## Validation
 

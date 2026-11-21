@@ -36,6 +36,10 @@ if(ABEP_BUILD_TESTS)
 
     add_executable(abep_tests
         tests/test_main.cpp
+        tests/test_atmosphere.cpp
+        tests/test_constants.cpp
+        tests/test_drag.cpp
+        tests/test_orbit.cpp
         tests/test_units.cpp
         tests/test_version.cpp
     )
