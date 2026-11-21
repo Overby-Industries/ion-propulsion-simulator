@@ -1,0 +1,184 @@
+#!/usr/bin/env python3
+"""Validate the transcribed US Standard Atmosphere 1976 density table and generate the C++ header from it.
+
+    python tools/ussa1976_table.py check      validate data/ussa1976_table1.txt, and that the header matches it
+    python tools/ussa1976_table.py generate   rewrite include/abep/standard_atmosphere_1976.hpp from the data
+
+Standard library only. The exit status is non-zero if a check fails. The data file is the record of what the
+report prints; the header is derived from it and is never edited by hand. docs/ATMOSPHERE.md says how the data
+file was produced and checked.
+"""
+import math
+import re
+import sys
+from pathlib import Path
+from typing import List, NamedTuple, Optional
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA = ROOT / "data" / "ussa1976_table1.txt"
+HEADER = ROOT / "include" / "abep" / "standard_atmosphere_1976.hpp"
+
+RHO_0 = 1.2250  # kg/m^3, the sea-level density the report's rho/rho_0 column is relative to
+
+# "5.604-7" is 5.604e-7. The report prints an exponent only where it changes.
+TOKEN = re.compile(r"^(\d\.\d{3})(?:-(\d+))?$")
+
+
+class Row(NamedTuple):
+    z_m: int
+    rho_mantissa: str
+    rho_exponent: int
+    ratio_mantissa: str
+    ratio_exponent: int
+
+    @property
+    def rho(self) -> float:
+        return float("%se%d" % (self.rho_mantissa, self.rho_exponent))
+
+    @property
+    def ratio(self) -> float:
+        return float("%se%d" % (self.ratio_mantissa, self.ratio_exponent))
+
+    @property
+    def rho_half_width(self) -> float:
+        """Half a unit in the last printed place: the most the printed density can differ from the true one."""
+        return 0.0005 * 10.0 ** self.rho_exponent
+
+    @property
+    def ratio_half_width(self) -> float:
+        return 0.0005 * 10.0 ** self.ratio_exponent
+
+
+def read_rows(path: Path) -> List[Row]:
+    rows = []
+    carried: List[Optional[int]] = [None, None]  # exponents currently in force for rho and rho/rho_0
+    for number, raw in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        fields = line.split()
+        if len(fields) != 3:
+            raise ValueError("%s:%d: expected 3 fields, got %d" % (path.name, number, len(fields)))
+        parsed = []
+        for column in (0, 1):
+            match = TOKEN.match(fields[1 + column])
+            if not match:
+                raise ValueError("%s:%d: cannot read %r" % (path.name, number, fields[1 + column]))
+            if match.group(2) is not None:
+                carried[column] = -int(match.group(2))
+            if carried[column] is None:
+                raise ValueError("%s:%d: no exponent given yet" % (path.name, number))
+            parsed.append((match.group(1), carried[column]))
+        rows.append(Row(int(fields[0]), parsed[0][0], parsed[0][1], parsed[1][0], parsed[1][1]))
+    return rows
+
+
+def expected_step_m(z_m: int) -> int:
+    """The row spacing the report uses at this altitude: 1 km to 300 km, 2 km to 500 km, 5 km above."""
+    return 1000 if z_m < 300000 else 2000 if z_m < 500000 else 5000
+
+
+def problems(rows: List[Row]) -> List[str]:
+    found = []
+    if len(rows) != 401:
+        found.append("expected 401 rows, found %d" % len(rows))
+    if rows and (rows[0].z_m != 100000 or rows[-1].z_m != 1000000):
+        found.append("the table must run from 100000 m to 1000000 m")
+    for a, b in zip(rows, rows[1:]):
+        if b.z_m - a.z_m != expected_step_m(a.z_m):
+            found.append("row spacing at %d m is %d m, expected %d m" % (a.z_m, b.z_m - a.z_m, expected_step_m(a.z_m)))
+    for r in rows:
+        # The two printed columns are the same quantity scaled by rho_0 and each rounded to four figures, so they
+        # may differ by their rounding and no more. A misread digit or exponent shows up here.
+        allowed = r.rho_half_width + RHO_0 * r.ratio_half_width
+        if abs(r.rho - RHO_0 * r.ratio) > allowed * (1.0 + 1e-9):
+            found.append("%d m: rho %.4e and rho/rho_0 * %.4f = %.4e differ by more than their rounding"
+                         % (r.z_m, r.rho, RHO_0, RHO_0 * r.ratio))
+    for a, b in zip(rows, rows[1:]):
+        if not b.rho < a.rho:
+            found.append("density does not fall between %d m and %d m" % (a.z_m, b.z_m))
+            continue
+        # A density scale height between about 5 km and 330 km: a slip of a factor of ten in an exponent
+        # would put the slope far outside this.
+        slope_per_km = -math.log(b.rho / a.rho) / ((b.z_m - a.z_m) / 1000.0)
+        if not 0.003 <= slope_per_km <= 0.2:
+            found.append("log-density slope %.4f per km between %d m and %d m is implausible"
+                         % (slope_per_km, a.z_m, b.z_m))
+    return found
+
+
+def render_header(rows: List[Row]) -> str:
+    lines = [
+        "#pragma once",
+        "",
+        "// GENERATED by tools/ussa1976_table.py from data/ussa1976_table1.txt. Do not edit by hand: change the",
+        "// data file and run `python tools/ussa1976_table.py generate`.",
+        "//",
+        "// Air density of the U.S. Standard Atmosphere, 1976, from 100 km to 1000 km geometric altitude, as printed",
+        "// in Table I (geometric altitude, metric units) of NOAA-S/T 76-1562 = NASA-TM-X-74335, Part 4. 401 rows:",
+        "// every 1 km up to 300 km, every 2 km from 300 to 500 km, every 5 km from 500 to 1000 km, each density to",
+        "// four significant figures exactly as printed. How the numbers were read and checked is in",
+        "// docs/ATMOSPHERE.md and docs/VALIDATION.md.",
+        "//",
+        "// The standard is one fixed profile: no latitude, longitude, time of day, season or solar-activity",
+        "// dependence. See the limits in docs/ATMOSPHERE.md.",
+        "",
+        "#include <cstddef>",
+        "#include <vector>",
+        "",
+        '#include "abep/atmosphere.hpp"',
+        "",
+        "namespace abep {",
+        "namespace ussa1976 {",
+        "",
+        "// {geometric altitude [m], density [kg/m^3]}, in increasing altitude.",
+        "inline constexpr DensityTable::Node kRows[] = {",
+    ]
+    for r in rows:
+        lines.append("    {%d.0, %se%d}," % (r.z_m, r.rho_mantissa, r.rho_exponent))
+    lines += [
+        "};",
+        "",
+        "inline constexpr std::size_t kRowCount = sizeof(kRows) / sizeof(kRows[0]);",
+        "",
+        "// The table as a density profile: log-linear between rows, and std::out_of_range outside 100 km to",
+        "// 1000 km. Build it once and keep it; constructing it copies the rows.",
+        "inline DensityTable density_table() {",
+        "    return DensityTable(std::vector<DensityTable::Node>(kRows, kRows + kRowCount));",
+        "}",
+        "",
+        "}  // namespace ussa1976",
+        "}  // namespace abep",
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def main(argv: List[str]) -> int:
+    if len(argv) != 2 or argv[1] not in ("check", "generate"):
+        sys.stderr.write(__doc__ + "\n")
+        return 2
+    rows = read_rows(DATA)
+    found = problems(rows)
+    if found:
+        for message in found:
+            sys.stderr.write("PROBLEM: %s\n" % message)
+        return 1
+    text = render_header(rows)
+    if argv[1] == "generate":
+        with open(HEADER, "w", encoding="utf-8", newline="\n") as f:
+            f.write(text)
+        print("wrote %s (%d rows)" % (HEADER.relative_to(ROOT), len(rows)))
+        return 0
+    current = HEADER.read_text(encoding="utf-8").replace("\r\n", "\n") if HEADER.exists() else None
+    if current != text:
+        sys.stderr.write("PROBLEM: %s does not match %s; run `python tools/ussa1976_table.py generate`\n"
+                         % (HEADER.relative_to(ROOT), DATA.relative_to(ROOT)))
+        return 1
+    print("ok: %d rows, spacing, rho against rho/rho_0, monotonic decrease and slope range all pass; header up to date"
+          % len(rows))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

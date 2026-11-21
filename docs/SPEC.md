@@ -1,6 +1,6 @@
 # ABEP: Ion Thrusters Simulator -- specification
 
-**Status:** draft. This describes what v0.1 will do. None of the model below is implemented yet.
+**Status:** draft. This describes what v0.1 will do. Written and tested so far: the orbit propagator (two-body gravity plus J2), drag, the altitude above the ellipsoid, and the 1976 US Standard Atmosphere density table. The ABEP thrust model, the power model and the state machine are not started. [VALIDATION.md](VALIDATION.md) says what has been checked.
 
 ## The question
 
@@ -43,7 +43,7 @@ Results are written as CSV. Python bindings (pybind11) for plotting come later.
 - **Frame and units.** Earth-centred inertial, SI. Gravity is a point mass plus the J2 term, which carries Earth's oblateness; no higher harmonics, no third bodies, no solar radiation pressure.
 - **Integration.** Fixed-step RK4. Deterministic: no adaptive steps, no random numbers, no fast-math.
 - **Altitude.** For the density lookup, the distance above the WGS 84 ellipsoid along the geocentric radius. Measuring against the equatorial radius instead would be wrong by up to 21 km at the poles (13 km at 51.6 deg latitude), which changes density by tens of percent; this form is within 5 m of true geodetic height at LEO altitudes.
-- **Atmosphere.** Density interpolated, exponentially between nodes, from a tabulated static profile; outside the table's range the run stops rather than guessing. The intended table is the US Standard Atmosphere 1976, to be added once its values have been checked against the printed report (see [VALIDATION.md](VALIDATION.md), finding 4); no density data is included yet. The air co-rotates with Earth, so drag uses velocity relative to it.
+- **Atmosphere.** Density from the US Standard Atmosphere 1976, Table I, 100 to 1000 km (401 rows, as printed), interpolated exponentially between rows; outside that range the run stops rather than guessing. It is one fixed profile, with no solar-cycle, geomagnetic, latitude or time-of-day dependence; how it was read and checked, and what it cannot say, is in [ATMOSPHERE.md](ATMOSPHERE.md). The air co-rotates with Earth, so drag uses velocity relative to it.
 - **Drag.** `a = -1/2 * rho * (Cd * A / m) * |v_rel| * v_rel`.
 - **Thrust.** Along the velocity vector; magnitude from the ABEP model.
 - **Power.** Sunlight and eclipse from a cylindrical Earth shadow.
@@ -55,7 +55,7 @@ Attitude dynamics. Plasma or thruster physics. Density variation with solar and 
 
 ## Constants
 
-Pinned, with sources and what has been checked, in [CONSTANTS.md](CONSTANTS.md): Earth's gravitational parameter, equatorial radius, flattening, rotation rate and J2. The solar constant is added with its source when the power model is written.
+Pinned, with sources and what has been checked, in [CONSTANTS.md](CONSTANTS.md): Earth's gravitational parameter, equatorial radius, flattening, rotation rate and J2. The atmosphere is pinned in [ATMOSPHERE.md](ATMOSPHERE.md). The solar constant is added with its source when the power model is written.
 
 ## Validation
 

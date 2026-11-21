@@ -132,7 +132,11 @@ void runOrbitTests() {
         const State s = abep::circular_orbit_state(h, deg_to_rad(53.0), deg_to_rad(120.0), deg_to_rad(40.0));
         CHECK_NEAR(abep::norm(s.r), kEarthEquatorialRadius + h, 1.0e-6);
         CHECK_NEAR(abep::norm(s.v), std::sqrt(kEarthGM / (kEarthEquatorialRadius + h)), 1.0e-9);
-        CHECK_NEAR(abep::dot(s.r, s.v), 0.0, 1.0e-6);
+        // r . v is zero on a circular orbit, but a dot product of two vectors this long is only good to a few unit
+        // roundoffs of |r||v| (one is 5.8e-6 m^2/s here), so the tolerance is relative: 1e-13 of |r||v|, the same
+        // relative scale as the length checks around it. An absolute 1e-6 sat below that noise and passed on one
+        // toolchain only by luck (docs/VALIDATION.md, finding 9).
+        CHECK_NEAR(abep::dot(s.r, s.v), 0.0, 1.0e-13 * abep::norm(s.r) * abep::norm(s.v));
         CHECK_NEAR(abep::inclination(s), deg_to_rad(53.0), 1.0e-12);
         CHECK_NEAR(abep::raan(s), deg_to_rad(120.0), 1.0e-12);
         CHECK_NEAR(abep::semi_major_axis(s), kEarthEquatorialRadius + h, 1.0e-6);
