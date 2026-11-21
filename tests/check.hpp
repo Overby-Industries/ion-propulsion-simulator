@@ -35,7 +35,22 @@ struct Scope {
 // Absolute tolerance. Physics tests state their tolerance in the test, up front.
 #define CHECK_NEAR(a, b, tol) \
     check::record(std::fabs((a) - (b)) <= (tol), "|" #a " - " #b "| <= " #tol, __FILE__, __LINE__)
+// The expression must throw exactly this kind of exception.
+#define CHECK_THROWS(expression, exception_type)                                                     \
+    do {                                                                                              \
+        bool thrown_ = false;                                                                         \
+        try {                                                                                         \
+            (void)(expression);                                                                       \
+        } catch (const exception_type&) {                                                             \
+            thrown_ = true;                                                                           \
+        }                                                                                             \
+        check::record(thrown_, #expression " throws " #exception_type, __FILE__, __LINE__);          \
+    } while (false)
 #define TEST(name) check::Scope test_scope_(name)
 
+void runAtmosphereTests();
+void runConstantsTests();
+void runDragTests();
+void runOrbitTests();
 void runUnitsTests();
 void runVersionTests();
