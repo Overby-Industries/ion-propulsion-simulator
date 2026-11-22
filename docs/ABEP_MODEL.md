@@ -51,7 +51,7 @@ For `beta` = 0 this is `asin(R / r) / pi`, 0.391 for a 400 km orbit. The Sun is 
 duty = clamp( (P_array * (1 - f) - P_load) / P_thruster , 0 , 1 )
 ```
 
-of the time. The deterministic flight state machine that decides when to thrust, charge and coast comes next; the pieces above are what it will use.
+of the time. The deterministic flight state machine that decides when to thrust, charge and coast uses these pieces: see [FLIGHT_MODES.md](FLIGHT_MODES.md). Run against a propagated orbit it reaches this duty to within the battery's capacity ([VALIDATION.md](VALIDATION.md), case 14).
 
 ## Where the numbers come from
 
@@ -74,7 +74,7 @@ Three plots in that paper are vector drawings, so their curves can be read from 
 
 - **Ram drag of the collected air.** Air that enters the intake arrives at `v_rel` and carries momentum `mdot * v_rel` that the satellite must absorb. Here that is inside `C_D * A` for the whole body, and the thrust is a gross thrust. Charging it against the thrust instead would give a net thrust of `mdot * (c_e - v_rel)`, which is lower by the fraction `v_rel / c_e`: 37% lower at 20 km/s, and negative (a net drag) for any exhaust velocity below `v_rel`, such as the 3.9 km/s the paper estimates for its test device. Whether this belongs in `C_D * A` is a question for the reader to judge; it is the first thing to examine.
 - **Intake physics.** Transmission probability, compression, backflow, and how `eta_c` changes with altitude, speed or gas composition. `eta_c` is a single number.
-- **Thruster physics.** Ionisation, plasma behaviour, minimum density to run, erosion by atomic oxygen, heating. `tau` and `c_e` are constants, independent of density and power.
+- **Thruster physics.** Ionisation, plasma behaviour, minimum density to run, erosion by atomic oxygen. `tau` and `c_e` are constants, independent of density and power. The only heating is the lumped thermal node of [FLIGHT_MODES.md](FLIGHT_MODES.md), whose coefficients are assumptions, and the only density limit is a threshold the user sets.
 - **The atmosphere.** One fixed profile (the 1976 standard); no solar-activity, latitude or time-of-day variation, and no composition ([ATMOSPHERE.md](ATMOSPHERE.md)).
 - **Attitude.** The array always faces the Sun when lit, the drag area and `C_D` are constant, and the intake always faces the flow.
 - **Shadow and Sun.** No penumbra, no atmospheric refraction, no oblateness in the shadow cylinder, and the Sun does not move over the run (it moves about 1 degree a day, so runs of weeks need the Sun direction updated).
