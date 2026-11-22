@@ -151,12 +151,12 @@ inline const std::vector<std::string>& sweep_output_keys() {
     return keys;
 }
 
-// Runs the sweep and writes it as CSV: a header (the swept settings, then sweep_output_keys()) and one row per point, each flushed
-// as it is written, so that a long sweep can be watched. The settings of every point are checked before the first run, so that a
-// point that makes no sense (a capture efficiency of 1.5) is found at once; the error names the point and its values.
-// Throws std::invalid_argument.
-inline void write_sweep_csv(std::ostream& os, const RunSettings& base, const std::vector<SweepAxis>& axes,
-                            const DensityTable& atmosphere) {
+namespace detail {
+
+// The sweep, with `simulate_point(settings)` giving the FullRun of each point.
+template <typename SimulatePoint>
+void write_sweep_csv_with(std::ostream& os, const RunSettings& base, const std::vector<SweepAxis>& axes,
+                          SimulatePoint&& simulate_point) {
     const std::size_t points = sweep_size(axes);
     const auto describe = [&](const RunSettings& s) {
         std::string text;
@@ -187,7 +187,7 @@ inline void write_sweep_csv(std::ostream& os, const RunSettings& base, const std
         const RunSettings s = sweep_point(base, axes, i);
         std::vector<KeyValue> summary;
         try {
-            summary = summary_rows(simulate(s, atmosphere));
+            summary = summary_rows(simulate_point(s));
         } catch (const std::invalid_argument& e) {
             throw std::invalid_argument(where(i, s) + e.what());
         }
@@ -202,6 +202,29 @@ inline void write_sweep_csv(std::ostream& os, const RunSettings& base, const std
         os << row << '\n';
         os.flush();
     }
+}
+
+}  // namespace detail
+
+// Runs the sweep and writes it as CSV: a header (the swept settings, then sweep_output_keys()) and one row per point, each flushed
+// as it is written, so that a long sweep can be watched. The settings of every point are checked before the first run, so that a
+// point that makes no sense (a capture efficiency of 1.5, an atmosphere of 9) is found at once; the error names the point and its
+// values. Each point flies the atmosphere that its `atmosphere` setting names, so the atmosphere can be swept too.
+// Throws std::invalid_argument.
+inline void write_sweep_csv(std::ostream& os, const RunSettings& base, const std::vector<SweepAxis>& axes) {
+    detail::write_sweep_csv_with(os, base, axes, [](const RunSettings& s) { return simulate(s); });
+}
+
+// The same with one density table for every point, whatever the `atmosphere` setting says; so the setting cannot be swept, and
+// asking for it throws std::invalid_argument.
+inline void write_sweep_csv(std::ostream& os, const RunSettings& base, const std::vector<SweepAxis>& axes,
+                            const DensityTable& atmosphere) {
+    for (const SweepAxis& axis : axes) {
+        if (axis.name == "atmosphere") {
+            throw std::invalid_argument("the atmosphere is fixed by the density table given, so the setting 'atmosphere' cannot be swept");
+        }
+    }
+    detail::write_sweep_csv_with(os, base, axes, [&](const RunSettings& s) { return simulate(s, atmosphere); });
 }
 
 }  // namespace abep

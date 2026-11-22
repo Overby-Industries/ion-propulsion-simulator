@@ -80,14 +80,13 @@ int main(int argc, char** argv) {
             throw std::invalid_argument("nothing is swept: give a setting a range (name=start:stop:count) or a list (name=v1,v2)");
         }
 
-        const abep::DensityTable atmosphere = abep::ussa1976::density_table();
         const std::size_t points = abep::sweep_size(axes);
         if (out_file.empty()) {
-            abep::write_sweep_csv(std::cout, settings, axes, atmosphere);
+            abep::write_sweep_csv(std::cout, settings, axes);
         } else {
             std::ofstream file(out_file, std::ios::binary);
             if (!file) throw std::runtime_error("could not open " + out_file + " for writing");
-            abep::write_sweep_csv(file, settings, axes, atmosphere);
+            abep::write_sweep_csv(file, settings, axes);
             file.close();
             if (!file) throw std::runtime_error("could not write " + out_file);
         }

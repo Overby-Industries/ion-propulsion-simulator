@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "abep/atmosphere_choice.hpp"
 #include "abep/eclipse.hpp"
 #include "abep/flight.hpp"
 #include "abep/mission.hpp"
@@ -64,6 +65,7 @@ struct RunSettings {
     double sample_every = 6.0;
     double include_j2 = 1.0;
     double corotating_atmosphere = 1.0;
+    double atmosphere = 0.0;  // 0: the 1976 US Standard Atmosphere; 1 to 4: ECSS-E-ST-10-04C low, moderate, high (long term), high (short term)
     double thruster_enabled = 1.0;
     // The summaries.
     double decay_altitude_km = 0.0;  // 0: the lower edge of the density table
@@ -112,6 +114,7 @@ inline const std::vector<SettingInfo>& setting_table() {
         {"sample_every", &RunSettings::sample_every, "keep one sample in this many steps (a whole number)"},
         {"include_j2", &RunSettings::include_j2, "1: gravity with J2, 0: point mass"},
         {"corotating_atmosphere", &RunSettings::corotating_atmosphere, "1: the air turns with the Earth, 0: it does not"},
+        {"atmosphere", &RunSettings::atmosphere, "0: the 1976 US Standard Atmosphere; 1, 2, 3, 4: ECSS low, moderate, high (long term), high (short term) solar activity"},
         {"thruster_enabled", &RunSettings::thruster_enabled, "0: a drag-only run"},
         {"decay_altitude_km", &RunSettings::decay_altitude_km, "decay altitude for the decay time, km (0: the lower edge of the table)"},
         {"decay_max_years", &RunSettings::decay_max_years, "longest time to simulate for the decay time, years"},
@@ -179,6 +182,7 @@ inline Mission make_mission(const RunSettings& s) {
     sc.step_s = s.step_s;
     sc.include_j2 = flag(s.include_j2, "include_j2");
     sc.corotating_atmosphere = flag(s.corotating_atmosphere, "corotating_atmosphere");
+    (void)atmosphere_choice(s.atmosphere);  // refuses a value that names no atmosphere; simulate() picks the table
     sc.thruster_enabled = flag(s.thruster_enabled, "thruster_enabled");
     sc.sample_every = static_cast<std::size_t>(s.sample_every);
 

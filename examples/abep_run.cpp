@@ -68,8 +68,9 @@ int main(int argc, char** argv) {
             abep::set_setting(settings, key, number);
         }
 
-        const abep::DensityTable atmosphere = abep::ussa1976::density_table();
-        const abep::FullRun result = abep::simulate(settings, atmosphere);
+        const abep::AtmosphereChoice atmosphere = abep::atmosphere_choice(settings.atmosphere);
+        const abep::FullRun result = abep::simulate(settings);
+        if (atmosphere != abep::AtmosphereChoice::Standard1976) std::printf("atmosphere: %s\n", abep::atmosphere_name(atmosphere));
         abep::write_run_files(result, out_dir);
 
         const abep::MissionResult& run = result.run;

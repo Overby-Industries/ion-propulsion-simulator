@@ -21,6 +21,7 @@ int main() {
     runRunConfigTests();
     runPublishedTests();
     runSweepTests();
+    runSolarActivityTests();
     std::printf("\n%d checks, %d failures\n", check::checks(), check::failures());
     return check::failures() == 0 ? 0 : 1;
 }
