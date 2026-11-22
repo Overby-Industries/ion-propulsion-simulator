@@ -202,6 +202,10 @@ A setting that does not exist, or a value that makes no sense, raises `ValueErro
 
 It has been built and tested with GCC 16.2 and Python 3.14 on Linux, with pybind11 3.0.1. It has not been built on Windows or macOS, and the CI does not build it.
 
+## Many runs: sweeps
+
+`abep_sweep` runs the same mission over a grid of settings (`altitude_km=160:300:8 thrust_density_mn_per_kw=10,12,14`) and writes one table with a row per point: the swept settings, then the rows of `summary.csv` that matter for the hold power. Every row is what a single `abep_run` of those settings gives. [SWEEPS.md](SWEEPS.md) has the syntax, the columns and two worked tables.
+
 ## The orbit view
 
 [`viewer/`](../viewer/README.md) is a small Godot program that plays a run back as a picture: the orbit coloured by flight mode, the satellite with a plume while it thrusts, the Earth's shadow, and the numbers of the moment. It reads `samples.csv`, and needs these of its columns: `t_s`, `mode`, `altitude_km`, `drag_n`, `thrust_n`, `net_drag_n`, `thruster_power_w`, `battery_wh`, `temperature_k`, `sunlit`, `x_km`, `y_km` and `z_km`. A file that lacks one, or whose time does not increase, is refused with the reason. If an `orbits.csv` and a `summary.csv` are in the same folder it reads them too, for the orbit number and the numbers of the whole run. It draws the positions as they are written, in the frame of the initial state with the Sun along +x, with the Earth turning at 7.292115e-5 rad/s from the start; it computes nothing of its own. Nothing in the simulator depends on it.
