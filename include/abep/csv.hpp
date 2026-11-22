@@ -63,17 +63,19 @@ inline std::string format_number(double x, int digits = 17) {
     return s.str();
 }
 
-// One row per sample. Altitude is in km; every other column is in the unit its name gives. `sunlit` is 1 or 0.
+// One row per sample. Altitude and the inertial position are in km; every other column is in the unit its name gives. `sunlit` is 1
+// or 0. The position columns come last, so a reader that counts columns from the left is not disturbed.
 inline void write_samples_csv(std::ostream& os, const std::vector<Sample>& samples, int digits = 17) {
     detail::check_digits(digits);
     const detail::CsvFormat format(os, digits);
     os << "t_s,mode,altitude_km,density_kg_m3,relative_speed_m_s,drag_n,thrust_n,net_drag_n,thruster_power_w,generation_w,"
-          "load_w,battery_wh,temperature_k,sunlit\n";
+          "load_w,battery_wh,temperature_k,sunlit,x_km,y_km,z_km\n";
     for (const Sample& s : samples) {
         os << s.t_s << ',' << mode_name(s.mode) << ',' << units::m_to_km(s.altitude_m) << ',' << s.density_kg_m3 << ','
            << s.relative_speed_m_s << ',' << s.drag_n << ',' << s.thrust_n << ',' << s.net_drag_n << ','
            << s.thruster_power_w << ',' << s.generation_w << ',' << s.load_w << ',' << s.battery_wh << ','
-           << s.temperature_k << ',' << (s.sunlit ? 1 : 0) << '\n';
+           << s.temperature_k << ',' << (s.sunlit ? 1 : 0) << ',' << units::m_to_km(s.position_m.x) << ','
+           << units::m_to_km(s.position_m.y) << ',' << units::m_to_km(s.position_m.z) << '\n';
     }
 }
 

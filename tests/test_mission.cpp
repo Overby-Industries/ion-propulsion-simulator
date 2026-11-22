@@ -218,12 +218,21 @@ void runMissionTests() {
             // The air moves with the Earth, so the relative speed is not the inertial one (for this polar orbit it is higher:
             // the air's eastward 0.4 km/s is across the satellite's northward 7.8 km/s).
             CHECK(first.relative_speed_m_s > abep::norm(sc.initial.v));
+            // The position is the state the sample describes: a copy of the initial one for the first sample, so exact.
+            CHECK_EQ(first.position_m.x, sc.initial.r.x);
+            CHECK_EQ(first.position_m.y, sc.initial.r.y);
+            CHECK_EQ(first.position_m.z, sc.initial.r.z);
         }
         long drag_wrong = 0;
+        long position_wrong = 0;
         for (const abep::Sample& s : run.samples) {
             if (s.drag_n != abep::drag_force(s.density_kg_m3, s.relative_speed_m_s, sat.drag_coefficient, sat.frontal_area_m2)) ++drag_wrong;
+            // The altitude of a sample is the altitude of its position (recomputed here, so with a tolerance, not bit for bit:
+            // finding 17); 1e-6 m is 10^4 times the rounding of a 2.5e5 m altitude.
+            if (std::fabs(abep::altitude_above_ellipsoid(s.position_m) - s.altitude_m) > 1.0e-6) ++position_wrong;
         }
         CHECK_EQ(drag_wrong, 0L);
+        CHECK_EQ(position_wrong, 0L);
         // Drag takes energy out of the orbit: without J2 the energy is otherwise conserved, and 9 orbits at 200 km for
         // this satellite cost about 2.7 km of semi-major axis, 12 kJ/kg (case 5's per-orbit formula); the bound is 5 kJ/kg.
         abep::Scenario two_body = sc;
