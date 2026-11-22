@@ -59,6 +59,7 @@ py::object summary_value(const std::string& text) {
 
 py::dict samples_columns(const std::vector<abep::Sample>& samples) {
     std::vector<double> t, altitude_km, density, speed, drag, thrust, net_drag, thruster_w, generation, load, battery, temperature;
+    std::vector<double> x_km, y_km, z_km;
     std::vector<std::string> mode;
     std::vector<int> sunlit;
     for (const abep::Sample& s : samples) {
@@ -76,6 +77,9 @@ py::dict samples_columns(const std::vector<abep::Sample>& samples) {
         battery.push_back(s.battery_wh);
         temperature.push_back(s.temperature_k);
         sunlit.push_back(s.sunlit ? 1 : 0);
+        x_km.push_back(abep::units::m_to_km(s.position_m.x));
+        y_km.push_back(abep::units::m_to_km(s.position_m.y));
+        z_km.push_back(abep::units::m_to_km(s.position_m.z));
     }
     py::dict d;
     d["t_s"] = t;
@@ -92,6 +96,9 @@ py::dict samples_columns(const std::vector<abep::Sample>& samples) {
     d["battery_wh"] = battery;
     d["temperature_k"] = temperature;
     d["sunlit"] = sunlit;
+    d["x_km"] = x_km;
+    d["y_km"] = y_km;
+    d["z_km"] = z_km;
     return d;
 }
 

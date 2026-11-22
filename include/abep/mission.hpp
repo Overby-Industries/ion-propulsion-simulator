@@ -106,6 +106,7 @@ struct Sample {
     double battery_wh = 0.0;
     double temperature_k = 0.0;
     bool sunlit = true;              // geometry only: the array can still be out
+    Vec3 position_m{};               // inertial position, m: the frame of the initial state, the Sun along Scenario::sun_unit
 };
 
 // The books for one orbit, an orbit being a span of the two-body period of the initial orbit.
@@ -316,6 +317,7 @@ inline MissionResult run_mission(const Satellite& sat, const Scenario& sc, const
             sample.battery_wh = battery_before_wh;  // like the rest, as it was at the start of the step
             sample.temperature_k = flags.temperature_k;
             sample.sunlit = in_sun;
+            sample.position_m = state.r;
             out.samples.push_back(sample);
         }
         state = next;

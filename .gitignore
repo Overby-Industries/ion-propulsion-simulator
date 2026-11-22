@@ -9,6 +9,7 @@ cmake-build-*/
 !docs/**/*.csv
 !tests/**/*.csv
 !data/**/*.csv
+!viewer/sample/*.csv
 
 # Editors and OS
 .vscode/

@@ -1,5 +1,6 @@
 #include "check.hpp"
 
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
@@ -7,6 +8,7 @@
 #include <ios>
 #include <limits>
 #include <locale>
+#include <random>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -107,7 +109,7 @@ void runCsvTests() {
         const std::vector<std::string> rows = lines_of(os.str());
         CHECK_EQ(rows.size(), r.samples.size() + 1);
         CHECK(rows[0] == "t_s,mode,altitude_km,density_kg_m3,relative_speed_m_s,drag_n,thrust_n,net_drag_n,thruster_power_w,"
-                         "generation_w,load_w,battery_wh,temperature_k,sunlit");
+                         "generation_w,load_w,battery_wh,temperature_k,sunlit,x_km,y_km,z_km");
         long wrong_fields = 0;
         long wrong_numbers = 0;
         long wrong_modes = 0;
@@ -115,7 +117,7 @@ void runCsvTests() {
         for (std::size_t i = 0; i < r.samples.size() && i + 1 < rows.size(); ++i) {
             const abep::Sample& s = r.samples[i];
             const std::vector<std::string> f = fields_of(rows[i + 1]);
-            if (f.size() != 14) {
+            if (f.size() != 17) {
                 ++wrong_fields;
                 continue;
             }
@@ -123,8 +125,9 @@ void runCsvTests() {
             seen[static_cast<std::size_t>(s.mode)] = true;
             const double want[] = {s.t_s, 0.0, units::m_to_km(s.altitude_m), s.density_kg_m3, s.relative_speed_m_s, s.drag_n,
                                    s.thrust_n, s.net_drag_n, s.thruster_power_w, s.generation_w, s.load_w, s.battery_wh,
-                                   s.temperature_k, s.sunlit ? 1.0 : 0.0};
-            for (std::size_t c = 0; c < 14; ++c) {
+                                   s.temperature_k, s.sunlit ? 1.0 : 0.0, units::m_to_km(s.position_m.x),
+                                   units::m_to_km(s.position_m.y), units::m_to_km(s.position_m.z)};
+            for (std::size_t c = 0; c < 17; ++c) {
                 if (c == 1) continue;  // the mode, a name
                 if (number(f[c]) != want[c]) ++wrong_numbers;  // exact: 17 digits read back as the same double
             }
@@ -202,8 +205,8 @@ void runCsvTests() {
         CHECK(six.str().size() < full.str().size());
         const std::vector<std::string> rows = lines_of(six.str());
         const std::vector<std::string> f = fields_of(rows.size() > 5 ? rows[5] : "");
-        CHECK_EQ(f.size(), 14u);
-        if (f.size() == 14 && rows.size() > 5) {
+        CHECK_EQ(f.size(), 17u);
+        if (f.size() == 17 && rows.size() > 5) {
             const abep::Sample& s = r.samples[4];
             CHECK(std::fabs(number(f[5]) - s.drag_n) <= 1.0e-5 * std::fabs(s.drag_n));
             CHECK(number(f[5]) != s.drag_n);  // it was rounded
@@ -307,7 +310,11 @@ void runCsvTests() {
         CHECK(rows.back().key == "hold_array_power_w");
 
         namespace fs = std::filesystem;
-        const fs::path dir = fs::temp_directory_path() / "abep_test_full_run";
+        // A folder of its own for each run of the suite: two copies of it at once (two builds, or two jobs on one machine) must not
+        // meet in one (finding 21).
+        std::random_device entropy;
+        const fs::path dir = fs::temp_directory_path() / ("abep_test_full_run_" + std::to_string(entropy()) + "_" +
+                                                          std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
         fs::remove_all(dir);
         abep::write_run_files(r, dir / "nested" / "run");  // the folders are made
         const auto slurp = [](const fs::path& p) {

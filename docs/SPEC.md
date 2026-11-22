@@ -37,7 +37,7 @@ SI internally. The unit shown is how the value is usually quoted and accepted.
 | Mode timeline | - | SAFE, CHARGE, COAST, THRUST or FAULT. *(state machine)* |
 | Summary | | Time to decay with the thruster off; steady-state power to hold altitude; energy balance per orbit. |
 
-Results are written as CSV: the columns, the two summary definitions and the command-line program are in [OUTPUT.md](OUTPUT.md). The Python bindings (pybind11) for plotting return the same results as lists, with no plotting library needed.
+Results are written as CSV: the columns, the two summary definitions and the command-line program are in [OUTPUT.md](OUTPUT.md). The Python bindings (pybind11) for plotting return the same results as lists, with no plotting library needed. An optional orbit view in Godot, [`viewer/`](../viewer/README.md), plays the CSV files back as a picture; it computes nothing of its own.
 
 ## Method (v0.1)
 

@@ -14,7 +14,7 @@ import abep
 MODES = {"SAFE", "CHARGE", "COAST", "THRUST", "FAULT"}
 SAMPLE_COLUMNS = [
     "t_s", "mode", "altitude_km", "density_kg_m3", "relative_speed_m_s", "drag_n", "thrust_n", "net_drag_n",
-    "thruster_power_w", "generation_w", "load_w", "battery_wh", "temperature_k", "sunlit",
+    "thruster_power_w", "generation_w", "load_w", "battery_wh", "temperature_k", "sunlit", "x_km", "y_km", "z_km",
 ]
 ORBIT_COLUMNS = [
     "orbit", "duration_s", "thrust_s", "duty", "eclipse_s", "generated_wh", "load_wh", "thruster_wh",
@@ -56,6 +56,17 @@ class RunTest(unittest.TestCase):
         self.assertEqual(samples["t_s"][0], 0.0)
         self.assertTrue(all(200.0 < h < 300.0 for h in samples["altitude_km"]))
         self.assertTrue(all(d > 0.0 for d in samples["density_kg_m3"]))
+
+    def test_positions_are_on_the_orbit(self):
+        s = self.result["samples"]
+        earth_radius_km = 6378.137  # the equatorial radius the model uses
+        first = (s["x_km"][0] ** 2 + s["y_km"][0] ** 2 + s["z_km"][0] ** 2) ** 0.5
+        self.assertAlmostEqual(first, earth_radius_km + 250.0, delta=1e-6)  # the orbit starts at the default altitude
+        for x, y, z, h in zip(s["x_km"], s["y_km"], s["z_km"], s["altitude_km"]):
+            above_sphere = (x * x + y * y + z * z) ** 0.5 - earth_radius_km
+            # The altitude is above the ellipsoid, which lies inside the sphere of the equatorial radius by up to 21.4 km.
+            self.assertLessEqual(above_sphere, h + 1e-6)
+            self.assertGreaterEqual(above_sphere, h - 21.4)
 
     def test_orbits(self):
         orbits = self.result["orbits"]
