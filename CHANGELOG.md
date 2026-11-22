@@ -2,6 +2,27 @@
 
 What changed in each release. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Before 1.0 the settings, the CSV columns and the C++ interfaces may change in any release.
 
+## 0.2.0 (unreleased)
+
+Module two, step one: the atmosphere at low, moderate and high solar activity, so that an answer can be a bracket and not one number.
+
+### Added
+
+- **Four solar-activity atmospheres** from ECSS-E-ST-10-04C Annex G (the JB-2006 total density, 100 to 900 km, for low, moderate, high long-term and high short-term activity), chosen with the new `atmosphere` setting: 0 is the 1976 standard, the default, and 1 to 4 are the new ones. There are 37 settings now. The data are in `data/ecss_e_st_10_04c_*.txt`, `tools/ecss_table.py` checks them and generates the header, and [ATMOSPHERE.md](docs/ATMOSPHERE.md) says where they come from and what they cannot tell you.
+- **A monotone cubic interpolation** option for `DensityTable`, used by the 20 km rows of the new tables. The 1976 table keeps its log-linear rule, so every earlier result is unchanged.
+- **`abep_sweep` can sweep the atmosphere** (`atmosphere=0:4:5`), and `write_sweep_csv` has a form without a table for it ([SWEEPS.md](docs/SWEEPS.md)).
+- Validation cases 30 to 35 and findings 25 to 30 ([VALIDATION.md](docs/VALIDATION.md)).
+
+### Changed
+
+- `simulate(settings)` takes the atmosphere from the setting; `simulate(settings, table)` is as it was. `abep_run` names the atmosphere in its first line when it is not the default.
+
+### Known limits
+
+- Each profile is an average over the equator, the day and the seasons, and JB-2006 is valid from 120 km. The standard is copyright ESA for the members of ECSS; the numbers are reproduced with attribution and no licence for reuse was found in it.
+- ESA's decay rate for GOCE lies between the low and the moderate profile's, and the low one misses the factor of 2 written for it, by 0.5% (finding 25).
+- The profiles do not explain the JAXA gap (finding 28).
+
 ## 0.1.0 (2026-11-22)
 
 The first release. The simulator answers one question: how much electrical power an air-breathing electric thruster needs to hold a satellite's altitude in low Earth orbit, *if* it makes a given thrust per watt and its intake catches a given share of the air. It is a sensitivity tool, not a thruster model.

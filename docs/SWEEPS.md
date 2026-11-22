@@ -10,7 +10,7 @@ The question this simulator exists for, how much electrical power an air-breathi
 abep_sweep altitude_km=160:300:8 thrust_density_mn_per_kw=10,12,14 out=hold_power.csv
 ```
 
-A setting given one number is fixed for the whole sweep, as in `abep_run` (`mass_kg=150`). A setting given `start:stop:count` takes `count` values equally spaced from `start` to `stop`, both included (`altitude_km=160:300:8` is 160, 180, ... 300; a count of 1 is just `start`). A setting given a list takes those values (`thrust_density_mn_per_kw=10,12,14`). The grid is every combination, the last swept setting changing fastest, so the order of the rows is fixed. `abep_sweep --help` lists the settings, which are the 36 of `abep_run` ([OUTPUT.md](OUTPUT.md)). Without `out=` the table goes to the standard output (on Windows, in text mode, with CR LF line ends; a file written with `out=` has line feeds only).
+A setting given one number is fixed for the whole sweep, as in `abep_run` (`mass_kg=150`). A setting given `start:stop:count` takes `count` values equally spaced from `start` to `stop`, both included (`altitude_km=160:300:8` is 160, 180, ... 300; a count of 1 is just `start`). A setting given a list takes those values (`thrust_density_mn_per_kw=10,12,14`). The grid is every combination, the last swept setting changing fastest, so the order of the rows is fixed. `abep_sweep --help` lists the settings, which are the 37 of `abep_run` ([OUTPUT.md](OUTPUT.md)). Without `out=` the table goes to the standard output (on Windows, in text mode, with CR LF line ends; a file written with `out=` has line feeds only).
 
 At most 100,000 points; a sweep with more is refused before it starts. Every point's settings are checked before the first run, so a point that makes no sense (a capture efficiency of 1.5) is found at once, and the error names the point and its values. Each row is written and flushed as it is made, so a long sweep can be watched in the file.
 
@@ -33,7 +33,7 @@ The first columns are the swept settings, in the order given, in the units of `a
 
 ## What a sweep shows
 
-Both tables are from the default satellite (100 kg, 1 m^2 frontal area, C_D 2.2, an intake of 2 m^2 with a capture efficiency of 0.46 and an exhaust velocity of 20 km/s, in an orbit at 51.6 degrees), in the 1976 standard atmosphere, so **they are illustrations of the model and not predictions for any satellite**: the defaults are illustrative, the thrust density is an assumption, and the atmosphere is one fixed profile ([LIMITATIONS.md](LIMITATIONS.md)).
+The first two tables are from the default satellite (100 kg, 1 m^2 frontal area, C_D 2.2, an intake of 2 m^2 with a capture efficiency of 0.46 and an exhaust velocity of 20 km/s, in an orbit at 51.6 degrees), in the 1976 standard atmosphere, so **they are illustrations of the model and not predictions for any satellite**: the defaults are illustrative, the thrust density is an assumption, and the atmosphere is one fixed profile ([LIMITATIONS.md](LIMITATIONS.md)).
 
 **The power rises steeply as the orbit goes down.** `abep_sweep altitude_km=160:300:8 thrust_density_mn_per_kw=10,12,14 duration_days=0.1 decay_max_years=0.05`:
 
@@ -61,8 +61,26 @@ The hold power is the mean drag over the thrust density, so it goes as the inver
 
 (At 0.30 the power at 160 km is 7.73 kW and at 0.46 it is 7.50 kW: the intake limit is nearer the drag, and the denser air near the bottom of the orbit makes it bind for part of the orbit. At 230 and 300 km the two are the same.) The altitude sets how much power is needed; the intake, the exhaust velocity and the frontal area set whether any power is enough. That is the part of the question that does not depend on the atmosphere.
 
+**The atmosphere is a setting too, so a sweep can give a bracket and not one number.** `atmosphere=0:4:5` runs the 1976 standard (0) and the four solar-activity profiles of ECSS-E-ST-10-04C (1 to 4, [ATMOSPHERE.md](ATMOSPHERE.md)). `abep_sweep altitude_km=160,200,250,300 atmosphere=0:4:5 duration_days=0.1 decay_max_years=0.1`, for the default satellite at 13.7 mN/kW:
+
+| Hold power at | low | moderate | high, long term | high, short term | the 1976 standard |
+|---:|---:|---:|---:|---:|---:|
+| 160 km | 5.36 kW | 8.26 kW | 9.53 kW | 10.0 kW | 7.50 kW |
+| 200 km | 708 W | 1.52 kW | 1.96 kW | 2.10 kW | 1.22 kW |
+| 250 km | 119 W | 377 W | 580 W | 666 W | 279 W |
+| 300 km | 26.6 W | 121 W | 225 W | 279 W | 86.4 W |
+
+| Days to decay at | low | moderate | high, long term | high, short term | the 1976 standard |
+|---:|---:|---:|---:|---:|---:|
+| 160 km | 0.181 | 0.142 | 0.129 | 0.125 | 0.149 |
+| 200 km | 1.57 | 0.887 | 0.743 | 0.707 | 1.04 |
+| 250 km | 11.8 | 4.62 | 3.35 | 3.05 | 5.94 |
+| 300 km | not in 36.5 | 17.0 | 10.6 | 9.07 | 23.1 |
+
+From the low to the high long-term profile the power to hold the orbit is 1.8 times higher at 160 km, 2.8 times at 200 km, 4.9 times at 250 km and 8.5 times at 300 km: the higher the orbit, the wider the bracket. The 1976 standard lies between the low and the moderate profile at every altitude here, and nearer the moderate one. At 300 km with the low profile the satellite does not come down within the 0.1 years of the run (`decayed` is 0, and `decay_time_days` is the 36.5 days simulated). Each profile is an average over the equator, the day and the seasons ([ATMOSPHERE.md](ATMOSPHERE.md)): the bracket is that of solar activity alone, and the real answer for a given orbit and date has more spread than that.
+
 ## Limits
 
-This is the default atmosphere and one satellite model at a time; a sweep cannot vary the atmosphere. It runs on one thread, one point after another. The Python module has no sweep function; a loop over `abep.run` does the same ([OUTPUT.md](OUTPUT.md)).
+It is one satellite model at a time, in one of five fixed atmospheres. It runs on one thread, one point after another. The Python module has no sweep function; a loop over `abep.run` does the same ([OUTPUT.md](OUTPUT.md)).
 
 Tests: `tests/test_sweep.cpp` (the values of an axis and what is refused; the grid and the order of its points; that each row is the single run's own numbers; that the hold power is the drag over the thrust density to 1e-9 and falls with altitude; that a point that makes no sense is refused with its name before any run) and three `ctest` runs of the program ([VALIDATION.md](VALIDATION.md), case 29).

@@ -44,7 +44,7 @@ Results are written as CSV: the columns, the two summary definitions and the com
 - **Frame and units.** Earth-centred inertial, SI. Gravity is a point mass plus the J2 term, which carries Earth's oblateness; no higher harmonics, no third bodies, no solar radiation pressure.
 - **Integration.** Fixed-step RK4. Deterministic: no adaptive steps, no random numbers, no fast-math.
 - **Altitude.** For the density lookup, the distance above the WGS 84 ellipsoid along the geocentric radius. Measuring against the equatorial radius instead would be wrong by up to 21 km at the poles (13 km at 51.6 deg latitude), which changes density by tens of percent; this form is within 5 m of true geodetic height at LEO altitudes.
-- **Atmosphere.** Density from the US Standard Atmosphere 1976, Table I, 100 to 1000 km (401 rows, as printed), interpolated exponentially between rows; outside that range the run stops rather than guessing. It is one fixed profile, with no solar-cycle, geomagnetic, latitude or time-of-day dependence; how it was read and checked, and what it cannot say, is in [ATMOSPHERE.md](ATMOSPHERE.md). The air co-rotates with Earth, so drag uses velocity relative to it.
+- **Atmosphere.** Density from the US Standard Atmosphere 1976, Table I, 100 to 1000 km (401 rows, as printed), interpolated exponentially between rows; outside that range the run stops rather than guessing. It is one fixed profile, with no solar-cycle, geomagnetic, latitude or time-of-day dependence (four more fixed profiles, for low, moderate and high solar activity, can be chosen with the `atmosphere` setting); how it was read and checked, and what it cannot say, is in [ATMOSPHERE.md](ATMOSPHERE.md). The air co-rotates with Earth, so drag uses velocity relative to it.
 - **Drag.** `a = -1/2 * rho * (Cd * A / m) * |v_rel| * v_rel`.
 - **Thrust.** Along the velocity vector; magnitude `min(tau * P, eta_c * rho * v_rel * A_in * c_e)`: power-limited or intake-limited, whichever is smaller. It is a gross thrust: the momentum of the air the intake collects (ram drag) is inside `C_D * A`, not subtracted from the thrust. See [ABEP_MODEL.md](ABEP_MODEL.md).
 - **Power.** Sunlight and eclipse from a cylindrical Earth shadow (no penumbra), with the Sun direction fixed in the inertial frame; a solar array given as a power, or as an area and an efficiency, with `S` = 1361 W/m^2; an ideal battery; and the orbit-averaged thruster duty from the energy budget.
@@ -52,7 +52,7 @@ Results are written as CSV: the columns, the two summary definitions and the com
 
 ## Not in scope for v0.1
 
-Attitude dynamics. Plasma or thruster physics. Density variation with solar and geomagnetic activity, which moves density at orbital altitude by about an order of magnitude or more, so absolute decay times are only indicative. Eccentric-orbit validation. Anything that needs an ephemeris: the Sun does not move over a run. The penumbra. Ram drag of the collected air as a separate term.
+Attitude dynamics. Plasma or thruster physics. Density variation with solar and geomagnetic activity, which moves density at orbital altitude by about an order of magnitude or more, so absolute decay times are only indicative (four fixed profiles for it were added after v0.1: [ATMOSPHERE.md](ATMOSPHERE.md)). Eccentric-orbit validation. Anything that needs an ephemeris: the Sun does not move over a run. The penumbra. Ram drag of the collected air as a separate term.
 
 ## Constants
 

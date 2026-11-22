@@ -50,6 +50,7 @@ if(ABEP_BUILD_TESTS)
         tests/test_run_config.cpp
         tests/test_standard_atmosphere_1976.cpp
         tests/test_summary.cpp
+        tests/test_solar_activity.cpp
         tests/test_sweep.cpp
         tests/test_thermal.cpp
         tests/test_thrust.cpp
@@ -86,6 +87,10 @@ if(ABEP_BUILD_EXAMPLES)
     if(ABEP_BUILD_TESTS)
         # A short run end to end: the program has to build, run and write its files.
         add_test(NAME abep_run_smoke COMMAND abep_run duration_days=0.05 out=${CMAKE_CURRENT_BINARY_DIR}/abep_run_smoke)
+        # The atmosphere setting end to end: a named profile runs, and a value that names no atmosphere is refused (exit code 2, not 0).
+        add_test(NAME abep_run_atmosphere COMMAND abep_run atmosphere=2 duration_days=0.05 out=${CMAKE_CURRENT_BINARY_DIR}/abep_run_atmosphere)
+        add_test(NAME abep_run_bad_atmosphere COMMAND abep_run atmosphere=9 duration_days=0.05 out=${CMAKE_CURRENT_BINARY_DIR}/abep_run_bad_atmosphere)
+        set_tests_properties(abep_run_bad_atmosphere PROPERTIES WILL_FAIL TRUE)
     endif()
 endif()
 
@@ -109,6 +114,9 @@ if(ABEP_BUILD_EXAMPLES)
         add_test(NAME abep_sweep_needs_an_axis COMMAND abep_sweep altitude_km=250)
         add_test(NAME abep_sweep_unknown_setting COMMAND abep_sweep nonsense=1,2)
         set_tests_properties(abep_sweep_needs_an_axis abep_sweep_unknown_setting PROPERTIES WILL_FAIL TRUE)
+        # The atmosphere can be swept: all five in one run.
+        add_test(NAME abep_sweep_atmosphere COMMAND abep_sweep atmosphere=0:4:5 duration_days=0.05 decay_max_years=0.02
+                 out=${CMAKE_CURRENT_BINARY_DIR}/abep_sweep_atmosphere.csv)
     endif()
 endif()
 

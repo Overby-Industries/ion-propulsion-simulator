@@ -60,6 +60,7 @@ void runPowerTests();
 void runPublishedTests();
 void runRomano2018Tests();
 void runRunConfigTests();
+void runSolarActivityTests();
 void runStandardAtmosphere1976Tests();
 void runSummaryTests();
 void runSweepTests();
