@@ -2,11 +2,11 @@
 
 **An open, deterministic simulator for one question: how much power must an air-breathing electric thruster have to hold a satellite's altitude in low Earth orbit?**
 
-**Status: early.** The orbit propagator (two-body gravity plus J2), drag, and the density of the 1976 US Standard Atmosphere from 100 to 1000 km are written and tested against known answers. The atmosphere is the printed table, read from the report and checked several ways ([`docs/ATMOSPHERE.md`](docs/ATMOSPHERE.md)). The ABEP thrust model (limited by power or by the intake), the eclipse and solar-power model and an ideal battery are written too, and the drag and intake mass flow agree with a published paper's curves to within 1% ([`docs/ABEP_MODEL.md`](docs/ABEP_MODEL.md)). The flight state machine (SAFE, CHARGE, COAST, THRUST, FAULT) is written and tested too, with a thruster temperature and a mission run that drives it through the orbit, power and thermal models ([`docs/FLIGHT_MODES.md`](docs/FLIGHT_MODES.md)); its thresholds are operating policy and its thermal numbers are assumptions. The CSV output is not started. See [`docs/SPEC.md`](docs/SPEC.md) for what v0.1 will do and [`docs/VALIDATION.md`](docs/VALIDATION.md) for what has and has not been checked, including the failed first attempts.
+**Status: early.** The orbit propagator (two-body gravity plus J2), drag, and the density of the 1976 US Standard Atmosphere from 100 to 1000 km are written and tested against known answers. The atmosphere is the printed table, read from the report and checked several ways ([`docs/ATMOSPHERE.md`](docs/ATMOSPHERE.md)). The ABEP thrust model (limited by power or by the intake), the eclipse and solar-power model and an ideal battery are written too, and the drag and intake mass flow agree with a published paper's curves to within 1% ([`docs/ABEP_MODEL.md`](docs/ABEP_MODEL.md)). The flight state machine (SAFE, CHARGE, COAST, THRUST, FAULT) is written and tested too, with a thruster temperature and a mission run that drives it through the orbit, power and thermal models ([`docs/FLIGHT_MODES.md`](docs/FLIGHT_MODES.md)); its thresholds are operating policy and its thermal numbers are assumptions. The CSV output, the two summary outputs (the time to decay with the thruster off, and the power to hold the altitude) and a command-line program, `abep_run`, that writes them are written and tested too ([`docs/OUTPUT.md`](docs/OUTPUT.md)), and so is a Python module (pybind11) that runs the same simulation and returns the results as plain dicts and lists, tested on Linux only. See [`docs/SPEC.md`](docs/SPEC.md) for what v0.1 will do and [`docs/VALIDATION.md`](docs/VALIDATION.md) for what has and has not been checked, including the failed first attempts.
 
 ## What it will do
 
-Given a satellite's mass, frontal area and drag coefficient, an orbit, a solar-power budget and an assumed thrust density, the simulator will propagate the orbit (two-body gravity plus J2) through a standard atmosphere, apply drag and thrust, and report net drag, altitude over time and thruster duty cycle, including eclipses. Results come out as CSV. Python bindings for plotting, and an optional orbit view, come later.
+Given a satellite's mass, frontal area and drag coefficient, an orbit, a solar-power budget and an assumed thrust density, the simulator will propagate the orbit (two-body gravity plus J2) through a standard atmosphere, apply drag and thrust, and report net drag, altitude over time and thruster duty cycle, including eclipses. Results come out as CSV (`abep_run`, below) or, from Python, as dicts and lists ([`docs/OUTPUT.md`](docs/OUTPUT.md)). An optional orbit view comes later.
 
 ## Limits
 
@@ -25,13 +25,21 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
+Run a mission and write its results as CSV (the defaults are illustrative, not data about any real satellite; `--help` lists every setting):
+
+```bash
+./build/abep_run altitude_km=300 mass_kg=150 duration_days=3 out=my_run
+```
+
+That writes `samples.csv`, `orbits.csv` and `summary.csv` into `my_run/`; the columns, and how the time to decay and the power to hold the altitude are defined, are in [`docs/OUTPUT.md`](docs/OUTPUT.md).
+
 ## Roadmap to v0.1
 
 1. Scope, repository and specification *(done)*
 2. Core physics: a two-body plus J2 orbit propagator, a standard-atmosphere density model and drag, tested against known answers *(done: propagator, J2, drag and the 1976 standard-atmosphere table)*
 3. ABEP model: thrust from power and thrust density, limited by intake capture, with solar power and eclipse *(done, and checked against a published drag curve; the exhaust velocity and the ram-drag question are open, see [`docs/ABEP_MODEL.md`](docs/ABEP_MODEL.md))*
 4. A deterministic flight state machine: SAFE, CHARGE, COAST, THRUST, FAULT *(done, with a mission run that couples it to the orbit, power and thermal models, see [`docs/FLIGHT_MODES.md`](docs/FLIGHT_MODES.md))*
-5. CSV output and Python bindings; an optional orbit view that must not delay the core
+5. CSV output and Python bindings; an optional orbit view that must not delay the core *(the CSV output, the two summary outputs, `abep_run` and the Python module are done, see [`docs/OUTPUT.md`](docs/OUTPUT.md); the module is tested on Linux only, and the orbit view is not started)*
 6. Validation against at least three published results, a limitations write-up, parameter sweeps
 7. The v0.1 release, with a short technical note and a walkthrough video
 8. A retrospective, and a choice of the next module
