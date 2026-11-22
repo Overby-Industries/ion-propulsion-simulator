@@ -71,12 +71,24 @@ struct Scenario {
     std::vector<TimeWindow> array_outages;    // the array produces nothing
     std::vector<TimeWindow> fault_windows;    // an external fault is asserted
     std::size_t sample_every = 1;             // keep one sample in this many steps
+    // End the run when the altitude above the ellipsoid falls below this, m (0: never). It is how a decay time is measured.
+    double stop_below_altitude_m = 0.0;
 };
 
 enum class EndReason {
     Completed,           // the run lasted its full duration
-    AltitudeOutOfRange   // the density table does not reach the satellite's altitude: it decayed, or never was in it
+    AltitudeOutOfRange,  // the density table does not reach the satellite's altitude: it decayed, or never was in it
+    BelowStopAltitude    // the altitude fell below Scenario::stop_below_altitude_m
 };
+
+constexpr const char* end_reason_name(EndReason r) noexcept {
+    switch (r) {
+        case EndReason::Completed: return "Completed";
+        case EndReason::AltitudeOutOfRange: return "AltitudeOutOfRange";
+        case EndReason::BelowStopAltitude: return "BelowStopAltitude";
+    }
+    return "?";
+}
 
 // The state at the start of a step, and what was done during it.
 struct Sample {
@@ -150,6 +162,9 @@ inline void validate(const Scenario& sc) {
     if (!(std::isfinite(sc.duration_s) && sc.duration_s >= 0.0)) throw std::invalid_argument("duration must be zero or more, and finite");
     if (!(std::isfinite(sc.step_s) && sc.step_s > 0.0)) throw std::invalid_argument("step must be positive and finite");
     if (sc.sample_every < 1) throw std::invalid_argument("sample_every must be at least 1");
+    if (!(std::isfinite(sc.stop_below_altitude_m) && sc.stop_below_altitude_m >= 0.0)) {
+        throw std::invalid_argument("the stop altitude must be zero (never) or more, and finite");
+    }
     if (!(std::fabs(norm(sc.sun_unit) - 1.0) <= 1.0e-9)) throw std::invalid_argument("the Sun direction must be a unit vector");
     if (!(std::isfinite(norm(sc.initial.r)) && norm(sc.initial.r) > 0.0 && std::isfinite(norm(sc.initial.v)))) {
         throw std::invalid_argument("the initial state must be finite, with a position away from Earth's centre");
@@ -209,6 +224,10 @@ inline MissionResult run_mission(const Satellite& sat, const Scenario& sc, const
 
         // 1. Look.
         const double altitude_m = altitude_above_ellipsoid(state.r);
+        if (sc.stop_below_altitude_m > 0.0 && altitude_m < sc.stop_below_altitude_m) {
+            out.end_reason = EndReason::BelowStopAltitude;
+            break;
+        }
         double density = 0.0;
         try {
             density = atmosphere.density(altitude_m);
