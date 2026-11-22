@@ -1,0 +1,6 @@
+# Godot
+.godot/
+*.translation
+
+# Screenshots written by tests/shot.gd
+/shots/
