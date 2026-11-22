@@ -16,6 +16,11 @@ inline Vec3 velocity_relative_to_air(const State& s, bool corotating = true) noe
     return {s.v.x + w * s.r.y, s.v.y - w * s.r.x, s.v.z};
 }
 
+// Drag force magnitude, N:  F = 1/2 * rho * v_rel^2 * Cd * A.
+inline double drag_force(double density, double relative_speed, double drag_coefficient, double area_m2) noexcept {
+    return 0.5 * density * relative_speed * relative_speed * drag_coefficient * area_m2;
+}
+
 // Drag acceleration, m/s^2:  a = -1/2 * rho * (Cd * A / m) * |v_rel| * v_rel.
 // `density` in kg/m^3, `area_m2` is the frontal area, `mass_kg` the satellite mass.
 inline Vec3 drag_acceleration(const State& s, double density, double drag_coefficient, double area_m2,

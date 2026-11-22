@@ -2,7 +2,7 @@
 
 **An open, deterministic simulator for one question: how much power must an air-breathing electric thruster have to hold a satellite's altitude in low Earth orbit?**
 
-**Status: early.** The orbit propagator (two-body gravity plus J2), drag, and the density of the 1976 US Standard Atmosphere from 100 to 1000 km are written and tested against known answers. The atmosphere is the printed table, read from the report and checked several ways ([`docs/ATMOSPHERE.md`](docs/ATMOSPHERE.md)). The ABEP thrust model, the power model and the state machine are not started. See [`docs/SPEC.md`](docs/SPEC.md) for what v0.1 will do and [`docs/VALIDATION.md`](docs/VALIDATION.md) for what has and has not been checked, including the failed first attempts.
+**Status: early.** The orbit propagator (two-body gravity plus J2), drag, and the density of the 1976 US Standard Atmosphere from 100 to 1000 km are written and tested against known answers. The atmosphere is the printed table, read from the report and checked several ways ([`docs/ATMOSPHERE.md`](docs/ATMOSPHERE.md)). The ABEP thrust model (limited by power or by the intake), the eclipse and solar-power model and an ideal battery are written too, and the drag and intake mass flow agree with a published paper's curves to within 1% ([`docs/ABEP_MODEL.md`](docs/ABEP_MODEL.md)). The flight state machine and the CSV output are not started. See [`docs/SPEC.md`](docs/SPEC.md) for what v0.1 will do and [`docs/VALIDATION.md`](docs/VALIDATION.md) for what has and has not been checked, including the failed first attempts.
 
 ## What it will do
 
@@ -29,7 +29,7 @@ ctest --test-dir build --output-on-failure
 
 1. Scope, repository and specification *(done)*
 2. Core physics: a two-body plus J2 orbit propagator, a standard-atmosphere density model and drag, tested against known answers *(done: propagator, J2, drag and the 1976 standard-atmosphere table)*
-3. ABEP model: thrust from power and thrust density, limited by intake capture, with solar power and eclipse
+3. ABEP model: thrust from power and thrust density, limited by intake capture, with solar power and eclipse *(done, and checked against a published drag curve; the exhaust velocity and the ram-drag question are open, see [`docs/ABEP_MODEL.md`](docs/ABEP_MODEL.md))*
 4. A deterministic flight state machine: SAFE, CHARGE, COAST, THRUST, FAULT
 5. CSV output and Python bindings; an optional orbit view that must not delay the core
 6. Validation against at least three published results, a limitations write-up, parameter sweeps

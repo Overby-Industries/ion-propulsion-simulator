@@ -1,6 +1,6 @@
 # ABEP: Ion Thrusters Simulator -- specification
 
-**Status:** draft. This describes what v0.1 will do. Written and tested so far: the orbit propagator (two-body gravity plus J2), drag, the altitude above the ellipsoid, and the 1976 US Standard Atmosphere density table. The ABEP thrust model, the power model and the state machine are not started. [VALIDATION.md](VALIDATION.md) says what has been checked.
+**Status:** draft. This describes what v0.1 will do. Written and tested so far: the orbit propagator (two-body gravity plus J2), drag, the altitude above the ellipsoid, the 1976 US Standard Atmosphere density table, the ABEP thrust model (limited by power or by the intake), the eclipse and solar-power model, and an ideal battery ([ABEP_MODEL.md](ABEP_MODEL.md)). The flight state machine, the CSV output and the summary outputs are not started. [VALIDATION.md](VALIDATION.md) says what has been checked.
 
 ## The question
 
@@ -19,12 +19,13 @@ SI internally. The unit shown is how the value is usually quoted and accepted.
 | Mass | m | kg | **Not in the original input list**, but drag deceleration is force divided by mass, so altitude over time cannot be computed without it. |
 | Frontal area | A | m^2 | Held constant; there is no attitude dynamics. |
 | Drag coefficient | Cd | - | The validation case uses a value near 2. |
-| Thrust density | tau | mN/kW | Thrust per unit electrical power. The plan assumes a published range of 10 to 13.7 mN/kW; the source is to be cited before v0.1. Stored internally as N/W. |
+| Thrust density | tau | mN/kW | Thrust per unit electrical power. The plan assumes 10 to 13.7 mN/kW; that traces to a secondary source, the JAXA concept as reported by Romano et al. (2018), and the exact figure and the primary paper are unread ([VALIDATION.md](VALIDATION.md), finding 12). Stored internally as N/W. |
+| Exhaust velocity | c_e | m/s | **Not in the original input list.** The intake can only supply so much air, and what thrust that air makes depends on how fast it leaves. Needed for the intake limit. The model refuses a value that, with the thrust density, would make the thruster more than 100% efficient. No range is sourced yet. |
 | Thruster power | P_t | W | Electrical power drawn while thrusting. |
 | Array power | P_a | W | Solar array output in sunlight. *(ABEP model)* |
 | Battery energy | E_b | Wh | Usable energy for eclipse and thrusting. *(ABEP model)* |
 | Bus load | P_l | W | Housekeeping load. *(ABEP model)* |
-| Intake area, capture efficiency | A_i, eta_c | m^2, - | Limit thrust by the propellant the intake can collect. This is the least settled part of the model; the form of the limit is decided when it is written. *(ABEP model)* |
+| Intake area, capture efficiency | A_i, eta_c | m^2, - | Limit thrust by the propellant the intake can collect: `F <= eta_c * rho * v_rel * A_in * c_e` (Romano et al. 2018, Eq. 9; [ABEP_MODEL.md](ABEP_MODEL.md)). The least settled part of the model: real intake efficiency is unproven. *(ABEP model)* |
 
 ## Outputs
 
@@ -45,17 +46,17 @@ Results are written as CSV. Python bindings (pybind11) for plotting come later.
 - **Altitude.** For the density lookup, the distance above the WGS 84 ellipsoid along the geocentric radius. Measuring against the equatorial radius instead would be wrong by up to 21 km at the poles (13 km at 51.6 deg latitude), which changes density by tens of percent; this form is within 5 m of true geodetic height at LEO altitudes.
 - **Atmosphere.** Density from the US Standard Atmosphere 1976, Table I, 100 to 1000 km (401 rows, as printed), interpolated exponentially between rows; outside that range the run stops rather than guessing. It is one fixed profile, with no solar-cycle, geomagnetic, latitude or time-of-day dependence; how it was read and checked, and what it cannot say, is in [ATMOSPHERE.md](ATMOSPHERE.md). The air co-rotates with Earth, so drag uses velocity relative to it.
 - **Drag.** `a = -1/2 * rho * (Cd * A / m) * |v_rel| * v_rel`.
-- **Thrust.** Along the velocity vector; magnitude from the ABEP model.
-- **Power.** Sunlight and eclipse from a cylindrical Earth shadow.
+- **Thrust.** Along the velocity vector; magnitude `min(tau * P, eta_c * rho * v_rel * A_in * c_e)`: power-limited or intake-limited, whichever is smaller. It is a gross thrust: the momentum of the air the intake collects (ram drag) is inside `C_D * A`, not subtracted from the thrust. See [ABEP_MODEL.md](ABEP_MODEL.md).
+- **Power.** Sunlight and eclipse from a cylindrical Earth shadow (no penumbra), with the Sun direction fixed in the inertial frame; a solar array given as a power, or as an area and an efficiency, with `S` = 1361 W/m^2; an ideal battery; and the orbit-averaged thruster duty from the energy budget.
 - **Modes.** A deterministic state machine (SAFE, CHARGE, COAST, THRUST, FAULT) driven by power, density and thermal flags.
 
 ## Not in scope for v0.1
 
-Attitude dynamics. Plasma or thruster physics. Density variation with solar and geomagnetic activity, which moves density at orbital altitude by about an order of magnitude or more, so absolute decay times are only indicative. Eccentric-orbit validation. Anything that needs an ephemeris.
+Attitude dynamics. Plasma or thruster physics. Density variation with solar and geomagnetic activity, which moves density at orbital altitude by about an order of magnitude or more, so absolute decay times are only indicative. Eccentric-orbit validation. Anything that needs an ephemeris: the Sun does not move over a run. The penumbra. Ram drag of the collected air as a separate term.
 
 ## Constants
 
-Pinned, with sources and what has been checked, in [CONSTANTS.md](CONSTANTS.md): Earth's gravitational parameter, equatorial radius, flattening, rotation rate and J2. The atmosphere is pinned in [ATMOSPHERE.md](ATMOSPHERE.md). The solar constant is added with its source when the power model is written.
+Pinned, with sources and what has been checked, in [CONSTANTS.md](CONSTANTS.md): Earth's gravitational parameter, equatorial radius, flattening, rotation rate, J2 and the solar constant. The atmosphere is pinned in [ATMOSPHERE.md](ATMOSPHERE.md), and the sources of the ABEP model's parameters in [ABEP_MODEL.md](ABEP_MODEL.md).
 
 ## Validation
 

@@ -51,7 +51,11 @@ struct Scope {
 void runAtmosphereTests();
 void runConstantsTests();
 void runDragTests();
+void runEclipseTests();
 void runOrbitTests();
+void runPowerTests();
+void runRomano2018Tests();
 void runStandardAtmosphere1976Tests();
+void runThrustTests();
 void runUnitsTests();
 void runVersionTests();
