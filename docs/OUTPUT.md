@@ -87,6 +87,7 @@ One header row, then one row per kept step (`sample_every` steps apart). Each ro
 | `battery_wh` | Wh | stored energy |
 | `temperature_k` | K | the thruster's temperature (constant if there is no thermal node) |
 | `sunlit` | 1 or 0 | the geometry: not in Earth's shadow. The array can still be out |
+| `x_km`, `y_km`, `z_km` | km | the satellite's inertial position, Earth-centred, in the frame of the initial state. In `abep_run` the Sun is along +x, and z is the Earth's axis, northwards. Last, so a reader that counts columns from the left is not disturbed. The orbit view reads them |
 
 ## `orbits.csv`
 
@@ -201,7 +202,11 @@ A setting that does not exist, or a value that makes no sense, raises `ValueErro
 
 It has been built and tested with GCC 16.2 and Python 3.14 on Linux, with pybind11 3.0.1. It has not been built on Windows or macOS, and the CI does not build it.
 
+## The orbit view
+
+[`viewer/`](../viewer/README.md) is a small Godot program that plays a run back as a picture: the orbit coloured by flight mode, the satellite with a plume while it thrusts, the Earth's shadow, and the numbers of the moment. It reads `samples.csv`, and needs these of its columns: `t_s`, `mode`, `altitude_km`, `drag_n`, `thrust_n`, `net_drag_n`, `thruster_power_w`, `battery_wh`, `temperature_k`, `sunlit`, `x_km`, `y_km` and `z_km`. A file that lacks one, or whose time does not increase, is refused with the reason. If an `orbits.csv` and a `summary.csv` are in the same folder it reads them too, for the orbit number and the numbers of the whole run. It draws the positions as they are written, in the frame of the initial state with the Sun along +x, with the Earth turning at 7.292115e-5 rad/s from the start; it computes nothing of its own. Nothing in the simulator depends on it.
+
 ## Not here yet
 
-- **An orbit view** (the optional Godot viewer), which must not delay the core. The CSV files, or the Python module, are its input.
+- **The orbit view anywhere but Windows.** It was written and tested with Godot 4.6.3 on Windows, by hand, with one GPU; the CI does not run it.
 - **The module on Windows and macOS.** Nothing in it is specific to Linux, but it has not been tried.
