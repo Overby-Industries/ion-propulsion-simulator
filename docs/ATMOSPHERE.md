@@ -1,6 +1,6 @@
 # Atmosphere
 
-The density the simulator flies through, where it comes from, how it was read, and what it cannot tell you.
+The density the simulator flies through, where it comes from, how it was read, and what it cannot tell you. There are five atmospheres: the 1976 US Standard Atmosphere (`atmosphere=0`, the default, described first) and four profiles for low, moderate and high solar activity from ECSS-E-ST-10-04C (`atmosphere=1` to `4`, [further down](#the-solar-activity-profiles)).
 
 ## What is in the table
 
@@ -60,15 +60,53 @@ That is for gaps twice as wide as the shipped table's. From the second differenc
 
 The report's introduction (Part 1) calls it an idealized, steady-state representation of the atmosphere, as it is assumed to exist in a period of moderate solar activity; its foreword gives the exospheric temperature as 1000 K and calls that representative of the mean for solar activity. That has consequences for a drag simulator:
 
-- **One fixed profile.** No latitude, longitude, time of day, season or day-to-day variation, and above all **no solar-cycle or geomagnetic dependence**. Real density at orbital altitude moves by about an order of magnitude or more between solar minimum and maximum, so an ABEP design that just closes at the standard's density may not close at solar minimum, and a decay time computed from this table is a single point on a wide range, not a prediction.
+- **One fixed profile.** No latitude, longitude, time of day, season or day-to-day variation, and above all **no solar-cycle or geomagnetic dependence**. Real density at orbital altitude moves by about an order of magnitude or more between solar minimum and maximum, so an ABEP design that just closes at the standard's density may not close at solar minimum, and a decay time computed from this table is a single point on a wide range, not a prediction. The four profiles below are the way to bracket it.
 - **Altitude.** The table is indexed by geometric altitude above mean sea level. The simulator looks it up at the height above the WGS 84 ellipsoid (see finding 6 in [VALIDATION.md](VALIDATION.md)); the geoid is within roughly 100 m of the ellipsoid, which is about 0.2% in density at 400 km and is ignored.
 - **Air co-rotates** with Earth in the drag calculation; the standard has nothing to say about winds.
 
 **How far it is from another model.** Against the NRLMSISE-00 density at average solar activity (F10.7 = 140, Ap = 15) plotted by Romano et al. (2018), whose date and place are not stated, the standard's density is 1.34 times higher at 120 km, 1.20 at 150 km, 1.06 at 200 km and 1.11 at 250 km. That is the size of the difference between two reasonable atmospheres at the altitudes ABEP needs ([VALIDATION.md](VALIDATION.md), finding 11; [ABEP_MODEL.md](ABEP_MODEL.md)).
 
+## The solar-activity profiles
+
+Four more profiles, for low, moderate and high solar and geomagnetic activity, are chosen with the `atmosphere` setting (`atmosphere=0`, the default, is the 1976 standard above):
+
+| `atmosphere` | Profile | F10.7 | Ap |
+|---:|---|---:|---:|
+| 1 | low | 65 | 0 |
+| 2 | moderate | 140 | 15 |
+| 3 | high, long term | 250 | 45 |
+| 4 | high, short term | 300 (81-day average 250) | 240 |
+
+**Where they come from.** Table G-4 of *ECSS-E-ST-10-04C, Space engineering: Space environment* (ESA Requirements and Standards Division, 15 November 2008, 198 pages, free from [ecss.nl](https://ecss.nl/wp-content/uploads/standards/ecss-e/ECSS-E-ST-10-04C15November2008.pdf)), Annex G, document pages 138 and 139: the total density of the JB-2006 model (Bowman, Tobiska, Marcos and Valladares, *J. Atmos. Sol.-Terr. Phys.* 70(5), 774-793, 2008, [doi:10.1016/j.jastp.2007.10.002](https://doi.org/10.1016/j.jastp.2007.10.002)) at equatorial latitude, averaged over diurnal and seasonal variations, from 100 to 900 km in 41 rows 20 km apart, to three significant figures. The record of what the standard prints is [`data/ecss_e_st_10_04c_table_g4.txt`](../data/ecss_e_st_10_04c_table_g4.txt), with a point for the standard's comma. `tools/ecss_table.py` validates it and generates [`include/abep/solar_activity_atmosphere.hpp`](../include/abep/solar_activity_atmosphere.hpp) from it, and the header is never edited by hand (`python tools/ecss_table.py check`, `generate`). Tables G-1 to G-3 of the same annex, the NRLMSISE-00 model (Picone, Hedin, Drob and Aikin, *J. Geophys. Res.* 107(A12), 1468, 2002, [doi:10.1029/2002JA009430](https://doi.org/10.1029/2002JA009430)) under the first three conditions, are in [`data/ecss_e_st_10_04c_tables_g1_g3.txt`](../data/ecss_e_st_10_04c_tables_g1_g3.txt) (temperature and density only). The simulation does not use them: they are a second, independent model, for the cross-check.
+
+**How they were read and checked.** The PDF has a text layer (it is not a scan), read with `tools/verification/extract_ecss_tables.py`, which needs PyMuPDF and the PDF and is not run in the CI. Then:
+
+1. **All 41 rows of Table G-4 were compared by eye with the rendered pages.**
+2. `tools/ecss_table.py` and `tests/test_solar_activity.cpp` check the shape (41 rows, 100 to 900 km, 20 km apart), that each column falls with altitude and that from 120 km the four are ordered low < moderate < high long term < high short term, that the header equals the data file, and eight values typed apart from it.
+3. **The other model.** JB-2006 over NRLMSISE-00, from the standard's own tables, is 0.78 to 1.18 from 120 to 600 km and varies smoothly, so a misprinted digit or exponent would stand out as a bump ([VALIDATION.md](VALIDATION.md), case 32).
+
+What the standard leaves odd is in finding 29: one cell of Table G-3 prints `3,64E-4`; above 600 km the NRLMSISE-00 density in Tables G-1 to G-3 differs from the sum of its own number densities (1% to 13%), so it is used below 600 km only; and the four JB-2006 columns at 100 km are not ordered by activity.
+
+**What the standard says about them.** JB-2006 is valid from 120 km up. The rows at 100 km are printed in Table G-4 and are kept, so that the tables reach the same lower edge as the 1976 standard and a run's decay still ends at 100 km; `decay_altitude_km=120` stays inside the model's validity. The tables end at 900 km, and a satellite above that stops the run. The estimated uncertainty of the JB-2006 total density is 10% to 15% at mean activity, depending on altitude, and more at the extremes: it "can have +/- 100% variation at 400-500 km for some activities and locations". The profiles are averages: no latitude, local time, season or date. The standard also says that high short-term activity is not to be combined with low or moderate long-term values.
+
+**Interpolation.** Rows 20 km apart are too far apart for the log-linear rule of the 1976 table, whose rows are 1 to 5 km apart. Thinning the 1976 table to 20 km rows and recovering the others, log-linear interpolation is off by up to 18% below 150 km, 4.7% from 150 to 200 km and 1.0% above, and a monotone cubic of ln(density) by 8.4%, 0.38% and 0.07% ([VALIDATION.md](VALIDATION.md), case 31 and finding 26). The ECSS profiles therefore use the cubic (`DensityTable::Interpolation::MonotoneCubic`); the 1976 table keeps log-linear, so every result with it is what it was.
+
+**How far apart they are.** JB-2006 divided by the 1976 standard, and the high long-term profile over the low one:
+
+| Altitude | low | moderate | high, long term | high, short term | high over low |
+|---:|---:|---:|---:|---:|---:|
+| 140 km | 0.81 | 1.04 | 1.13 | 1.16 | 1.4 |
+| 200 km | 0.58 | 1.25 | 1.61 | 1.72 | 2.8 |
+| 300 km | 0.31 | 1.40 | 2.61 | 3.25 | 8.5 |
+| 400 km | 0.17 | 1.51 | 3.89 | 5.60 | 23.5 |
+
+Near 140 km solar activity hardly matters and at 400 km it is everything, which is why the hold power of a satellite and its time to decay span a wide bracket with the altitude ([SWEEPS.md](SWEEPS.md)). The moderate profile is **not** closer to the NRLMSISE-00 curve of Romano et al. (2018) than the 1976 standard is: 1.27 to 1.51 times it from 120 to 250 km, against 1.06 to 1.34 for the standard (finding 27). The name says the level of activity, not a precise atmosphere.
+
+**Copyright.** The standard is copyright 2008 by the European Space Agency for the members of ECSS, and the text of it that was read grants no licence for reuse. The numbers of Table G-4 are reproduced with attribution (the data file and the header say whose they are). Anyone who relies on this repository's licence for them should ask the ECSS secretariat.
+
 ## Using a different atmosphere
 
-`DensityTable` accepts any strictly increasing altitude and positive density table, so a low- or high-solar-activity profile can be swapped in as soon as one with a citable source is added. That is the natural next step for a sensitivity tool, and the most useful contribution here: a published density-versus-altitude table for solar minimum or maximum (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
+`DensityTable` accepts any strictly increasing altitude and positive density table, with log-linear or monotone-cubic interpolation, so another atmosphere can be added as soon as one with a citable source is: a table in `data/`, a generated header like `solar_activity_atmosphere.hpp`, and a case in [VALIDATION.md](VALIDATION.md) before it is used. `simulate(settings, table)` flies any table; the `atmosphere` setting chooses among the five built in. The most useful contribution here is a citable source for how density varies with latitude, local time and season, or a series of actual F10.7 and Ap values by date (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
 
 ## Reproducing and changing the table
 

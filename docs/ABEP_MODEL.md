@@ -35,7 +35,7 @@ With `A_in = A`, `C_D` = 2.2 and `v_rel` = 7.3 km/s, the intake can supply a thr
 | 200 km | 14.9 mN | 1.09 kW | 1.49 kW |
 | 250 km | 3.5 mN | 0.26 kW | 0.35 kW |
 
-These are the model's arithmetic for illustration, not predictions. Real density moves them by an order of magnitude with solar activity ([ATMOSPHERE.md](ATMOSPHERE.md)).
+These are the model's arithmetic for illustration, not predictions. Real density moves them by an order of magnitude with solar activity ([ATMOSPHERE.md](ATMOSPHERE.md)); the `atmosphere` setting runs them in the low, moderate and high profiles ([SWEEPS.md](SWEEPS.md)).
 
 **Shadow.** Earth's shadow is a cylinder of Earth's equatorial radius `R` along the anti-Sun axis. A point `r` is in shadow if `r . s < 0` and `|r|^2 - (r . s)^2 < R^2`, where `s` is the unit vector towards the Sun. For a circular orbit of radius `r` whose plane makes the angle `beta` with `s`, a point at angle `theta` from the projection of `s` on the orbit has `r_hat . s = cos(theta) * cos(beta)`. It is in shadow when `cos(theta) < 0` and `cos(theta)^2 * cos(beta)^2 > 1 - (R / r)^2`, that is for `theta` within `phi` of 180 degrees, where `cos(phi) = sqrt(1 - (R / r)^2) / cos(beta)`. The shadow covers an arc of `2 * phi`, so the fraction of the orbit in shadow is `2 * phi / (2 * pi) = phi / pi`:
 
@@ -75,7 +75,7 @@ Three plots in that paper are vector drawings, so their curves can be read from 
 - **Ram drag of the collected air.** Air that enters the intake arrives at `v_rel` and carries momentum `mdot * v_rel` that the satellite must absorb. Here that is inside `C_D * A` for the whole body, and the thrust is a gross thrust. Charging it against the thrust instead would give a net thrust of `mdot * (c_e - v_rel)`, which is lower by the fraction `v_rel / c_e`: 37% lower at 20 km/s, and negative (a net drag) for any exhaust velocity below `v_rel`, such as the 3.9 km/s the paper estimates for its test device. Whether this belongs in `C_D * A` is a question for the reader to judge; it is the first thing to examine.
 - **Intake physics.** Transmission probability, compression, backflow, and how `eta_c` changes with altitude, speed or gas composition. `eta_c` is a single number.
 - **Thruster physics.** Ionisation, plasma behaviour, minimum density to run, erosion by atomic oxygen. `tau` and `c_e` are constants, independent of density and power. The only heating is the lumped thermal node of [FLIGHT_MODES.md](FLIGHT_MODES.md), whose coefficients are assumptions, and the only density limit is a threshold the user sets.
-- **The atmosphere.** One fixed profile (the 1976 standard); no solar-activity, latitude or time-of-day variation, and no composition ([ATMOSPHERE.md](ATMOSPHERE.md)).
+- **The atmosphere.** One fixed profile: the 1976 standard, or one of four for low, moderate and high solar activity (`atmosphere=1` to `4`); no latitude, time-of-day or date variation, and no composition ([ATMOSPHERE.md](ATMOSPHERE.md)).
 - **Attitude.** The array always faces the Sun when lit, the drag area and `C_D` are constant, and the intake always faces the flow.
 - **Shadow and Sun.** No penumbra, no atmospheric refraction, no oblateness in the shadow cylinder, and the Sun does not move over the run (it moves about 1 degree a day, so runs of weeks need the Sun direction updated).
 - **Power.** The battery is ideal (no losses, rate limit or ageing) and there is no array degradation or temperature effect.
