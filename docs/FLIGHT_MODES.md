@@ -80,7 +80,7 @@ A single node: `C dT/dt = Q - G (T - T_sink)`, heated by `Q = P (1 - eta)` where
 
 `run_mission` (in `mission.hpp`) drives the machine one fixed step at a time. Each step:
 
-1. **Look.** Altitude above the ellipsoid, density there, speed relative to the (co-rotating) air, sunlight or shadow. A satellite that leaves the density table ends the run with `EndReason::AltitudeOutOfRange`; it is never given an invented density.
+1. **Look.** Altitude above the ellipsoid, density there, speed relative to the (co-rotating) air, sunlight or shadow. A satellite that leaves the density table ends the run with `EndReason::AltitudeOutOfRange`; it is never given an invented density. A scenario can also name an altitude to stop at (`stop_below_altitude_m`), which ends the run with `EndReason::BelowStopAltitude`: it is how [OUTPUT.md](OUTPUT.md) measures a decay time.
 2. **Decide.** The flags are built from that and the machine chooses the mode for the step. The mode is chosen from what the satellite sees at the start of the step, so a change takes effect one step late at most.
 3. **Power.** The array gives `array_power` in sunlight and when it has not failed, the mode sets the bus load, and in THRUST the thruster is offered its rated power or, if less, what the supply plus the battery can give over the step, so that the thruster alone never empties the battery. The thrust model turns that into thrust and an actual power draw (less than offered if the intake is the limit).
 4. **Move.** One RK4 step of gravity (with or without J2), drag and thrust. The thrust is held constant over the step and points along the inertial velocity.

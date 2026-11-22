@@ -38,6 +38,7 @@ if(ABEP_BUILD_TESTS)
         tests/test_main.cpp
         tests/test_atmosphere.cpp
         tests/test_constants.cpp
+        tests/test_csv.cpp
         tests/test_drag.cpp
         tests/test_eclipse.cpp
         tests/test_flight.cpp
@@ -45,7 +46,9 @@ if(ABEP_BUILD_TESTS)
         tests/test_orbit.cpp
         tests/test_power.cpp
         tests/test_romano2018.cpp
+        tests/test_run_config.cpp
         tests/test_standard_atmosphere_1976.cpp
+        tests/test_summary.cpp
         tests/test_thermal.cpp
         tests/test_thrust.cpp
         tests/test_units.cpp
@@ -63,4 +66,45 @@ if(ABEP_BUILD_TESTS)
     endif()
 
     add_test(NAME abep_tests COMMAND abep_tests)
+endif()
+
+# The command-line program: runs a mission and writes CSV (docs/OUTPUT.md).
+option(ABEP_BUILD_EXAMPLES "Build the example programs" ${ABEP_IS_TOP_LEVEL})
+if(ABEP_BUILD_EXAMPLES)
+    add_executable(abep_run examples/abep_run.cpp)
+    target_link_libraries(abep_run PRIVATE abep)
+    set_target_properties(abep_run PROPERTIES CXX_EXTENSIONS OFF)
+
+    if(MSVC)
+        target_compile_options(abep_run PRIVATE /W4 /permissive- /utf-8)
+    else()
+        target_compile_options(abep_run PRIVATE -Wall -Wextra -Wpedantic -Wshadow -Wconversion)
+    endif()
+
+    if(ABEP_BUILD_TESTS)
+        # A short run end to end: the program has to build, run and write its files.
+        add_test(NAME abep_run_smoke COMMAND abep_run duration_days=0.05 out=${CMAKE_CURRENT_BINARY_DIR}/abep_run_smoke)
+    endif()
+endif()
+
+# The Python module (pybind11): run(), write_csv() and settings(), the same run as abep_run (docs/OUTPUT.md). Off by default, so
+# that the library and its tests need nothing but a C++17 compiler. Build it with
+#     cmake -S . -B build -DABEP_BUILD_PYTHON=ON -Dpybind11_DIR=$(python -m pybind11 --cmakedir)
+option(ABEP_BUILD_PYTHON "Build the Python module (needs pybind11)" OFF)
+if(ABEP_BUILD_PYTHON)
+    set(PYBIND11_FINDPYTHON ON)  # let pybind11 use CMake's own FindPython (CMake 3.18 or newer); it sets Python_EXECUTABLE
+    find_package(pybind11 CONFIG REQUIRED)
+    pybind11_add_module(abep_python MODULE python/abep_module.cpp)
+    target_link_libraries(abep_python PRIVATE abep)
+    # The target has another name than the module because `abep` is the library; the module has to be called abep.
+    set_target_properties(abep_python PROPERTIES OUTPUT_NAME abep CXX_EXTENSIONS OFF)
+    if(ABEP_BUILD_TESTS)
+        if(DEFINED Python_EXECUTABLE)
+            set(ABEP_PYTHON_FOR_TESTS "${Python_EXECUTABLE}")
+        else()
+            set(ABEP_PYTHON_FOR_TESTS "${PYTHON_EXECUTABLE}")
+        endif()
+        add_test(NAME abep_python COMMAND "${ABEP_PYTHON_FOR_TESTS}" "${CMAKE_CURRENT_SOURCE_DIR}/python/test_abep.py")
+        set_tests_properties(abep_python PROPERTIES ENVIRONMENT "PYTHONPATH=$<TARGET_FILE_DIR:abep_python>")
+    endif()
 endif()

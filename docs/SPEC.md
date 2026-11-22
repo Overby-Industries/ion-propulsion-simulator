@@ -1,6 +1,6 @@
 # ABEP: Ion Thrusters Simulator -- specification
 
-**Status:** draft. This describes what v0.1 will do. Written and tested so far: the orbit propagator (two-body gravity plus J2), drag, the altitude above the ellipsoid, the 1976 US Standard Atmosphere density table, the ABEP thrust model (limited by power or by the intake), the eclipse and solar-power model, and an ideal battery ([ABEP_MODEL.md](ABEP_MODEL.md)), and the flight state machine with a thruster thermal node and a mission run that drives it ([FLIGHT_MODES.md](FLIGHT_MODES.md)). The CSV output and the summary outputs are not started. [VALIDATION.md](VALIDATION.md) says what has been checked.
+**Status:** draft. This describes what v0.1 will do. Written and tested so far: the orbit propagator (two-body gravity plus J2), drag, the altitude above the ellipsoid, the 1976 US Standard Atmosphere density table, the ABEP thrust model (limited by power or by the intake), the eclipse and solar-power model, and an ideal battery ([ABEP_MODEL.md](ABEP_MODEL.md)), and the flight state machine with a thruster thermal node and a mission run that drives it ([FLIGHT_MODES.md](FLIGHT_MODES.md)). The CSV output, the two summary outputs (time to decay with the thruster off, power to hold the altitude) and a command-line program and a Python module (pybind11) that run the simulation and write or return them are written and tested too ([OUTPUT.md](OUTPUT.md)); the module is tested on Linux only. [VALIDATION.md](VALIDATION.md) says what has been checked.
 
 ## The question
 
@@ -37,7 +37,7 @@ SI internally. The unit shown is how the value is usually quoted and accepted.
 | Mode timeline | - | SAFE, CHARGE, COAST, THRUST or FAULT. *(state machine)* |
 | Summary | | Time to decay with the thruster off; steady-state power to hold altitude; energy balance per orbit. |
 
-Results are written as CSV. Python bindings (pybind11) for plotting come later.
+Results are written as CSV: the columns, the two summary definitions and the command-line program are in [OUTPUT.md](OUTPUT.md). The Python bindings (pybind11) for plotting return the same results as lists, with no plotting library needed.
 
 ## Method (v0.1)
 
