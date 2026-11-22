@@ -25,7 +25,7 @@ ORBIT_COLUMNS = [
 class SettingsTest(unittest.TestCase):
     def test_every_setting_has_a_default(self):
         s = abep.settings()
-        self.assertEqual(len(s), 36)
+        self.assertEqual(len(s), 37)
         self.assertEqual(s["altitude_km"], 250.0)
         self.assertEqual(s["include_j2"], 1.0)
         self.assertEqual(s["thrust_density_mn_per_kw"], 13.7)

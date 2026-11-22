@@ -2,7 +2,7 @@
 
 **An open, deterministic simulator for one question: how much power must an air-breathing electric thruster have to hold a satellite's altitude in low Earth orbit?**
 
-**Status: early.** The orbit propagator (two-body gravity plus J2), drag, and the density of the 1976 US Standard Atmosphere from 100 to 1000 km are written and tested against known answers. The atmosphere is the printed table, read from the report and checked several ways ([`docs/ATMOSPHERE.md`](docs/ATMOSPHERE.md)). The ABEP thrust model (limited by power or by the intake), the eclipse and solar-power model and an ideal battery are written too, and the drag and intake mass flow agree with a published paper's curves to within 1% ([`docs/ABEP_MODEL.md`](docs/ABEP_MODEL.md)). The flight state machine (SAFE, CHARGE, COAST, THRUST, FAULT) is written and tested too, with a thruster temperature and a mission run that drives it through the orbit, power and thermal models ([`docs/FLIGHT_MODES.md`](docs/FLIGHT_MODES.md)); its thresholds are operating policy and its thermal numbers are assumptions. The CSV output, the two summary outputs (the time to decay with the thruster off, and the power to hold the altitude) and a command-line program, `abep_run`, that writes them are written and tested too ([`docs/OUTPUT.md`](docs/OUTPUT.md)), and so is a Python module (pybind11) that runs the same simulation and returns the results as plain dicts and lists, tested on Linux only. A small Godot program, [`viewer/`](viewer/), plays the CSV files back as an orbit with the flight mode, the eclipses and the numbers of the moment; it is optional, and tested by hand, not in the CI. The model has been compared with published results: it agrees with the curves of Romano et al. (2018), with ESA's figures for GOCE and with two design points quoted in Romano et al.'s review, and it does not reproduce the powers quoted for one concept study (JAXA's), which is recorded as an open finding. A second program, `abep_sweep`, runs the mission over a grid of settings and writes one row of results for each ([`docs/SWEEPS.md`](docs/SWEEPS.md)), and the limits of the model are written out in [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md). See [`docs/SPEC.md`](docs/SPEC.md) for what v0.1 will do and [`docs/VALIDATION.md`](docs/VALIDATION.md) for what has and has not been checked, including the failed first attempts.
+**Status: early.** The orbit propagator (two-body gravity plus J2), drag, and the density of the 1976 US Standard Atmosphere from 100 to 1000 km are written and tested against known answers. The atmosphere is the printed table, read from the report and checked several ways ([`docs/ATMOSPHERE.md`](docs/ATMOSPHERE.md)). The ABEP thrust model (limited by power or by the intake), the eclipse and solar-power model and an ideal battery are written too, and the drag and intake mass flow agree with a published paper's curves to within 1% ([`docs/ABEP_MODEL.md`](docs/ABEP_MODEL.md)). The flight state machine (SAFE, CHARGE, COAST, THRUST, FAULT) is written and tested too, with a thruster temperature and a mission run that drives it through the orbit, power and thermal models ([`docs/FLIGHT_MODES.md`](docs/FLIGHT_MODES.md)); its thresholds are operating policy and its thermal numbers are assumptions. The CSV output, the two summary outputs (the time to decay with the thruster off, and the power to hold the altitude) and a command-line program, `abep_run`, that writes them are written and tested too ([`docs/OUTPUT.md`](docs/OUTPUT.md)), and so is a Python module (pybind11) that runs the same simulation and returns the results as plain dicts and lists, tested on Linux only. A small Godot program, [`viewer/`](viewer/), plays the CSV files back as an orbit with the flight mode, the eclipses and the numbers of the moment; it is optional, and tested by hand, not in the CI. The model has been compared with published results: it agrees with the curves of Romano et al. (2018), with ESA's figures for GOCE and with two design points quoted in Romano et al.'s review, and it does not reproduce the powers quoted for one concept study (JAXA's), which is recorded as an open finding. A second program, `abep_sweep`, runs the mission over a grid of settings and writes one row of results for each ([`docs/SWEEPS.md`](docs/SWEEPS.md)), and the limits of the model are written out in [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md). Four more atmospheres, for low, moderate and high solar activity (from ECSS-E-ST-10-04C), can be chosen with a setting, and the atmosphere can be swept, so that a result can be given as a bracket ([`docs/ATMOSPHERE.md`](docs/ATMOSPHERE.md)). See [`docs/SPEC.md`](docs/SPEC.md) for what v0.1 will do and [`docs/VALIDATION.md`](docs/VALIDATION.md) for what has and has not been checked, including the failed first attempts.
 
 ## What it will do
 
@@ -11,7 +11,7 @@ Given a satellite's mass, frontal area and drag coefficient, an orbit, a solar-p
 ## Limits
 
 - **It does not predict thruster performance.** Thrust here is a parameter: power times an assumed thrust density, limited by an assumed intake capture. Real intake efficiency is unproven, and, to our knowledge, ground tests have not yet shown net positive thrust. Read the outputs as sensitivities ("if the thrust density were X, the duty cycle would be Y"), never as evidence that a thruster will work.
-- **One fixed atmosphere.** The density table is the 1976 US Standard Atmosphere, a single profile for moderate solar activity. Real density varies strongly with solar and geomagnetic activity, so absolute decay times are only indicative.
+- **Fixed atmospheres.** By default the density is the 1976 US Standard Atmosphere, a single profile for moderate solar activity. Four profiles for low, moderate and high solar activity can be chosen with `atmosphere=1` to `4`; they differ by a factor of 5 at 250 km and 8 at 300 km between the low and the high. Real density also varies with latitude, local time and season, which none of them models, so absolute decay times are only indicative.
 - **Simplified dynamics.** Gravity is a point mass plus J2 (no higher harmonics), with a fixed frontal area, no attitude dynamics, no third bodies, no solar radiation pressure.
 - **Early.** Until [`docs/VALIDATION.md`](docs/VALIDATION.md) says a case is done, treat that part of the model as unchecked.
 
@@ -49,6 +49,12 @@ To see how the power to hold the altitude depends on the orbit and the thruster,
 ./build/abep_sweep altitude_km=160:300:8 thrust_density_mn_per_kw=10,12,14 out=hold_power.csv
 ```
 
+The atmosphere is a setting too, so a sweep can give a bracket and not one number: `atmosphere=0:4:5` runs the 1976 standard and the four solar-activity profiles ([`docs/ATMOSPHERE.md`](docs/ATMOSPHERE.md)):
+
+```bash
+./build/abep_sweep altitude_km=160,200,250,300 atmosphere=0:4:5 out=bracket.csv
+```
+
 ## Roadmap to v0.1
 
 1. Scope, repository and specification *(done)*
@@ -60,13 +66,15 @@ To see how the power to hold the altitude depends on the orbit and the thruster,
 7. The v0.1 release, with a short technical note and a walkthrough video *(the technical note is written, [`docs/TECHNICAL_NOTE.md`](docs/TECHNICAL_NOTE.md) and its [PDF](docs/TECHNICAL_NOTE.pdf); the video and the release are to do, see [`CHANGELOG.md`](CHANGELOG.md))*
 8. A retrospective, and a choice of the next module
 
+After v0.1, module two: the atmosphere at low, moderate and high solar activity *(done: `atmosphere=1` to `4`, [`docs/ATMOSPHERE.md`](docs/ATMOSPHERE.md))*, then the orbital lifetime of debris-like objects.
+
 ## Part of Overby Industries
 
 This repository is one of the software-first projects described in the [Overby Industries profile](https://github.com/Overby-Industries). The propulsion concept it examines is described in [`power-and-propulsion`](https://github.com/Overby-Industries/power-and-propulsion) and in the papers in [`whitepapers`](https://github.com/Overby-Industries/whitepapers).
 
 ## Contributing
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md). The most useful contributions right now are sources: a published thrust-density figure, a published drag-versus-altitude curve, a citable density table for low or high solar activity, a second reading of the atmosphere table against the report, or a critique of the model assumptions in the spec.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md). The most useful contributions right now are sources: a published thrust-density figure, a published drag-versus-altitude curve, a second reading of the atmosphere tables against their reports (the 1976 standard's and the ECSS standard's), a citable source for how density varies with latitude and local time, or a critique of the model assumptions in the spec.
 
 ## License
 

@@ -20,17 +20,12 @@
 #include "abep/csv.hpp"
 #include "abep/full_run.hpp"
 #include "abep/run_config.hpp"
-#include "abep/standard_atmosphere_1976.hpp"
 #include "abep/version.hpp"
 
 namespace py = pybind11;
 
 namespace {
 
-const abep::DensityTable& atmosphere() {
-    static const abep::DensityTable table = abep::ussa1976::density_table();
-    return table;
-}
 
 // Keyword arguments to settings. A bool counts as 0 or 1; anything that is not a number is a TypeError, and a name that is not a
 // setting, or a value that makes no sense, is a ValueError (std::invalid_argument is translated to it).
@@ -135,7 +130,7 @@ py::dict orbits_columns(const std::vector<abep::OrbitBalance>& orbits) {
 // The simulation can take a while; the interpreter is free to do other things meanwhile.
 abep::FullRun simulate_without_gil(const abep::RunSettings& settings) {
     py::gil_scoped_release release;
-    return abep::simulate(settings, atmosphere());
+    return abep::simulate(settings);
 }
 
 }  // namespace

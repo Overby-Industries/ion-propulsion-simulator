@@ -12,9 +12,12 @@
 #include <vector>
 
 #include "abep/atmosphere.hpp"
+#include "abep/atmosphere_choice.hpp"
 #include "abep/csv.hpp"
 #include "abep/mission.hpp"
 #include "abep/run_config.hpp"
+#include "abep/solar_activity_atmosphere.hpp"
+#include "abep/standard_atmosphere_1976.hpp"
 #include "abep/summary.hpp"
 #include "abep/units.hpp"
 
@@ -28,6 +31,34 @@ struct FullRun {
     HoldResult hold;
     std::string hold_note;   // why there is no hold result, if there is none
 };
+
+// The density table of an atmosphere choice, built on first use and kept for the life of the program.
+inline const DensityTable& atmosphere_table(AtmosphereChoice choice) {
+    static const DensityTable standard = ussa1976::density_table();
+    static const DensityTable low = ecss::density_table(ecss::Activity::Low);
+    static const DensityTable moderate = ecss::density_table(ecss::Activity::Moderate);
+    static const DensityTable high = ecss::density_table(ecss::Activity::High);
+    static const DensityTable high_short_term = ecss::density_table(ecss::Activity::HighShortTerm);
+    switch (choice) {
+        case AtmosphereChoice::Standard1976: return standard;
+        case AtmosphereChoice::EcssLow: return low;
+        case AtmosphereChoice::EcssModerate: return moderate;
+        case AtmosphereChoice::EcssHigh: return high;
+        case AtmosphereChoice::EcssHighShortTerm: return high_short_term;
+    }
+    return standard;  // not reached
+}
+
+inline const char* atmosphere_name(AtmosphereChoice choice) {
+    switch (choice) {
+        case AtmosphereChoice::Standard1976: return "1976 US Standard Atmosphere";
+        case AtmosphereChoice::EcssLow: return ecss::name(ecss::Activity::Low);
+        case AtmosphereChoice::EcssModerate: return ecss::name(ecss::Activity::Moderate);
+        case AtmosphereChoice::EcssHigh: return ecss::name(ecss::Activity::High);
+        case AtmosphereChoice::EcssHighShortTerm: return ecss::name(ecss::Activity::HighShortTerm);
+    }
+    return "unknown";  // not reached
+}
 
 // Throws std::invalid_argument, naming the setting where it can, for settings that make no sense.
 inline FullRun simulate(const RunSettings& settings, const DensityTable& atmosphere) {
@@ -49,6 +80,11 @@ inline FullRun simulate(const RunSettings& settings, const DensityTable& atmosph
         out.hold_note = e.what();  // the inputs were checked by make_mission, so this is the one-orbit case
     }
     return out;
+}
+
+// The same, in the atmosphere that the `atmosphere` setting names (0: the 1976 standard, 1 to 4: ECSS-E-ST-10-04C).
+inline FullRun simulate(const RunSettings& settings) {
+    return simulate(settings, atmosphere_table(atmosphere_choice(settings.atmosphere)));
 }
 
 // The rows of summary.csv: the totals of the run, the time to decay, and the power to hold the altitude if there is one.

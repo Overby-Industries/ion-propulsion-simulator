@@ -8,7 +8,7 @@ A run gives three files, written by the command-line program `abep_run`, by the 
 | `orbits.csv` | Orbit | The thrust duty and the energy balance of each orbit |
 | `summary.csv` | Value | `key,value`: the totals of the run and the two summary outputs, the time to decay and the power to hold the altitude |
 
-Everything here is a sensitivity tool's output, not a prediction. The thrust is power times an assumed thrust density, limited by an assumed intake, in one fixed standard atmosphere ([the README's limits](../README.md#limits)). The defaults of the program are illustrative: they are not data about any real satellite or thruster.
+Everything here is a sensitivity tool's output, not a prediction. The thrust is power times an assumed thrust density, limited by an assumed intake, in an atmosphere of your choice, the 1976 standard by default ([the README's limits](../README.md#limits)). The defaults of the program are illustrative: they are not data about any real satellite or thruster.
 
 ## Run it
 
@@ -61,6 +61,7 @@ All are numbers; an on/off setting is 0 or 1. They are the fields of `RunSetting
 | `sample_every` | 6 | keep one sample in this many steps (a whole number) |
 | `include_j2` | 1 | 1: gravity with J2, 0: point mass |
 | `corotating_atmosphere` | 1 | 1: the air turns with the Earth, 0: it does not |
+| `atmosphere` | 0 | 0: the 1976 US Standard Atmosphere; 1, 2, 3, 4: the ECSS low, moderate, high (long term) and high (short term) solar-activity profiles ([ATMOSPHERE.md](ATMOSPHERE.md)). `abep_run` names the atmosphere in its first line when it is not 0 |
 | `thruster_enabled` | 1 | 0: a drag-only run |
 | `decay_altitude_km` | 0 | decay altitude for the decay time, km (0: the lower edge of the density table, 100 km) |
 | `decay_max_years` | 10 | longest time to simulate for the decay time, years |
@@ -129,7 +130,7 @@ Both are in `include/abep/summary.hpp`, are built on `run_mission()` so they use
 
 - A decay altitude of 0, or one below the density table, means the table's lower edge, 100 km. The run has to stop there anyway: there is no density below it, and it is not invented.
 - The time is found to within one step. The altitude is checked at the start of each step, which makes it late, and the run also stops, early, if a step's own stages reach below the table. At 100 km a satellite like the default one falls several km in a step, so `decay_final_altitude_km` can be that much above 100.
-- It is as good as the atmosphere. The table is one fixed profile for moderate solar activity; the density at orbital altitude varies by about an order of magnitude or more with solar and geomagnetic activity, and the decay time varies about as much. Read it as a sensitivity: what the time would be if the air were this thick.
+- It is as good as the atmosphere. The table is one fixed profile for moderate solar activity; the density at orbital altitude varies by about an order of magnitude or more with solar and geomagnetic activity, and the decay time varies about as much. Read it as a sensitivity: what the time would be if the air were this thick. `atmosphere=1` to `4` run the same time in the low, moderate and high solar-activity profiles of ECSS-E-ST-10-04C ([ATMOSPHERE.md](ATMOSPHERE.md)): for the default satellite at 250 km it is 11.8 days in the low profile and 3.0 days in the high short-term one.
 - It agrees with the circular-orbit decay equation `da/dt = -(Cd A / m) rho sqrt(GM a)` integrated separately, to 0.084% for an exponential atmosphere from 200 km to 120 km ([VALIDATION.md](VALIDATION.md), case 19).
 
 ### Power to hold the altitude
