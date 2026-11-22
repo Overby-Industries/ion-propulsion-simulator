@@ -45,10 +45,12 @@ if(ABEP_BUILD_TESTS)
         tests/test_mission.cpp
         tests/test_orbit.cpp
         tests/test_power.cpp
+        tests/test_published.cpp
         tests/test_romano2018.cpp
         tests/test_run_config.cpp
         tests/test_standard_atmosphere_1976.cpp
         tests/test_summary.cpp
+        tests/test_sweep.cpp
         tests/test_thermal.cpp
         tests/test_thrust.cpp
         tests/test_units.cpp
@@ -84,6 +86,29 @@ if(ABEP_BUILD_EXAMPLES)
     if(ABEP_BUILD_TESTS)
         # A short run end to end: the program has to build, run and write its files.
         add_test(NAME abep_run_smoke COMMAND abep_run duration_days=0.05 out=${CMAKE_CURRENT_BINARY_DIR}/abep_run_smoke)
+    endif()
+endif()
+
+# The sweep program: the same mission over a grid of settings, one row of results per point (docs/SWEEPS.md).
+if(ABEP_BUILD_EXAMPLES)
+    add_executable(abep_sweep examples/abep_sweep.cpp)
+    target_link_libraries(abep_sweep PRIVATE abep)
+    set_target_properties(abep_sweep PROPERTIES CXX_EXTENSIONS OFF)
+
+    if(MSVC)
+        target_compile_options(abep_sweep PRIVATE /W4 /permissive- /utf-8)
+    else()
+        target_compile_options(abep_sweep PRIVATE -Wall -Wextra -Wpedantic -Wshadow -Wconversion)
+    endif()
+
+    if(ABEP_BUILD_TESTS)
+        # Four short runs end to end: the program has to build, run and write its table.
+        add_test(NAME abep_sweep_smoke COMMAND abep_sweep altitude_km=200:250:2 thrust_density_mn_per_kw=10,14
+                 duration_days=0.05 decay_max_years=0.02 out=${CMAKE_CURRENT_BINARY_DIR}/abep_sweep_smoke.csv)
+        # And it has to refuse a sweep of nothing, and a setting that does not exist (exit code 2, not 0).
+        add_test(NAME abep_sweep_needs_an_axis COMMAND abep_sweep altitude_km=250)
+        add_test(NAME abep_sweep_unknown_setting COMMAND abep_sweep nonsense=1,2)
+        set_tests_properties(abep_sweep_needs_an_axis abep_sweep_unknown_setting PROPERTIES WILL_FAIL TRUE)
     endif()
 endif()
 
