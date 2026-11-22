@@ -1,6 +1,6 @@
 # ABEP: Ion Thrusters Simulator -- specification
 
-**Status:** draft. This describes what v0.1 will do. Written and tested so far: the orbit propagator (two-body gravity plus J2), drag, the altitude above the ellipsoid, the 1976 US Standard Atmosphere density table, the ABEP thrust model (limited by power or by the intake), the eclipse and solar-power model, and an ideal battery ([ABEP_MODEL.md](ABEP_MODEL.md)). The flight state machine, the CSV output and the summary outputs are not started. [VALIDATION.md](VALIDATION.md) says what has been checked.
+**Status:** draft. This describes what v0.1 will do. Written and tested so far: the orbit propagator (two-body gravity plus J2), drag, the altitude above the ellipsoid, the 1976 US Standard Atmosphere density table, the ABEP thrust model (limited by power or by the intake), the eclipse and solar-power model, and an ideal battery ([ABEP_MODEL.md](ABEP_MODEL.md)), and the flight state machine with a thruster thermal node and a mission run that drives it ([FLIGHT_MODES.md](FLIGHT_MODES.md)). The CSV output and the summary outputs are not started. [VALIDATION.md](VALIDATION.md) says what has been checked.
 
 ## The question
 
@@ -48,7 +48,7 @@ Results are written as CSV. Python bindings (pybind11) for plotting come later.
 - **Drag.** `a = -1/2 * rho * (Cd * A / m) * |v_rel| * v_rel`.
 - **Thrust.** Along the velocity vector; magnitude `min(tau * P, eta_c * rho * v_rel * A_in * c_e)`: power-limited or intake-limited, whichever is smaller. It is a gross thrust: the momentum of the air the intake collects (ram drag) is inside `C_D * A`, not subtracted from the thrust. See [ABEP_MODEL.md](ABEP_MODEL.md).
 - **Power.** Sunlight and eclipse from a cylindrical Earth shadow (no penumbra), with the Sun direction fixed in the inertial frame; a solar array given as a power, or as an area and an efficiency, with `S` = 1361 W/m^2; an ideal battery; and the orbit-averaged thruster duty from the energy budget.
-- **Modes.** A deterministic state machine (SAFE, CHARGE, COAST, THRUST, FAULT) driven by power, density and thermal flags.
+- **Modes.** A deterministic state machine (SAFE, CHARGE, COAST, THRUST, FAULT) driven by power (battery charge and sunlight), density and thermal flags, and an external fault flag. At most one transition per control step; the thresholds are operating policy, not physics, and the thermal node behind the thermal flag has no sourced numbers. The rules, the thresholds and what the mission run does with them are in [FLIGHT_MODES.md](FLIGHT_MODES.md).
 
 ## Not in scope for v0.1
 

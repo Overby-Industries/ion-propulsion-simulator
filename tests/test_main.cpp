@@ -13,6 +13,9 @@ int main() {
     runEclipseTests();
     runPowerTests();
     runRomano2018Tests();
+    runThermalTests();
+    runFlightTests();
+    runMissionTests();
     std::printf("\n%d checks, %d failures\n", check::checks(), check::failures());
     return check::failures() == 0 ? 0 : 1;
 }
