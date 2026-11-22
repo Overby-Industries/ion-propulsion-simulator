@@ -185,7 +185,7 @@ void runMissionTests() {
         // agree bit for bit. Where the compiler fuses them differently in the two places the results differ by rounding:
         // measured over nine compiler settings, up to 2.6e-6 m and 3.1e-9 m/s after these 5000 steps. The first version of
         // this test asked for 1e-6 m and 1e-9 m/s, which is at that noise, and failed in the -march=native build
-        // (docs/VALIDATION.md, finding 13). Now 1e-3 m and 1e-6 m/s: 400 times the noise, and still tight enough to catch
+        // (docs/VALIDATION.md, finding 14). Now 1e-3 m and 1e-6 m/s: 400 times the noise, and still tight enough to catch
         // an error of 1e-7 in the drag (drag moves the satellite by about 4e4 m over this run).
         abep::Satellite sat = example_satellite();
         sat.mass_kg = 500.0;
@@ -203,11 +203,17 @@ void runMissionTests() {
         CHECK(run.end_reason == abep::EndReason::Completed);
         CHECK_EQ(run.elapsed_s, 50000.0);
         CHECK_EQ(run.seconds_in(Mode::Thrust), 0.0);  // never commanded
-        // The sample's drag and speed are the library's own drag law and relative velocity at the start: exact.
+        // The sample's relative speed is the library's own relative velocity at the start. It is the same expression as the
+        // test's, evaluated in two places, so it agrees bit for bit only where the compiler fuses the multiply-adds of
+        // `v + w * y` the same way in both. With GCC 16.2 at -O2 or -O3 and -mfma it does not: the two differ by one unit in
+        // the last place, 9.1e-13 m/s of 7799 m/s, and the Ubuntu job of the CI failed on a bit-exact check of this
+        // (docs/VALIDATION.md, finding 17). Now 1e-9 m/s, 1000 times that, and still far finer than any change to the model:
+        // leaving out Earth's rotation moves this speed by about 15 m/s, and a relative error of 1e-9 in the rotation rate
+        // by 3e-8 m/s. The drag below is a product of the stored numbers with no addition to fuse, so it is exact.
         CHECK(!run.samples.empty());
         if (!run.samples.empty()) {
             const abep::Sample& first = run.samples.front();
-            CHECK_EQ(first.relative_speed_m_s, abep::norm(abep::velocity_relative_to_air(sc.initial, true)));
+            CHECK_NEAR(first.relative_speed_m_s, abep::norm(abep::velocity_relative_to_air(sc.initial, true)), 1.0e-9);
             CHECK_EQ(first.drag_n, abep::drag_force(first.density_kg_m3, first.relative_speed_m_s, sat.drag_coefficient, sat.frontal_area_m2));
             // The air moves with the Earth, so the relative speed is not the inertial one (for this polar orbit it is higher:
             // the air's eastward 0.4 km/s is across the satellite's northward 7.8 km/s).
