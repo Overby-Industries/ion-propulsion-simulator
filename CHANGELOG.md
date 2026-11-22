@@ -23,7 +23,7 @@ Module two, step one: the atmosphere at low, moderate and high solar activity, s
 - ESA's decay rate for GOCE lies between the low and the moderate profile's, and the low one misses the factor of 2 written for it, by 0.5% (finding 25).
 - The profiles do not explain the JAXA gap (finding 28).
 
-## 0.1.0 (unreleased)
+## 0.1.0 (2026-11-22)
 
 The first release. The simulator answers one question: how much electrical power an air-breathing electric thruster needs to hold a satellite's altitude in low Earth orbit, *if* it makes a given thrust per watt and its intake catches a given share of the air. It is a sensitivity tool, not a thruster model.
 

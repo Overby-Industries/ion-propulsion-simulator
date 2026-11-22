@@ -16,7 +16,7 @@ Every constant the simulator uses, where it comes from, and what has and has not
 
 The four defining parameters are the WGS 84 set published by the US National Geospatial-Intelligence Agency (NGA.STND.0036, formerly NIMA TR8350.2). The NGA pages could not be opened from the environment this was written in (the site did not respond, and a UN copy of the document returned 404), so the values were confirmed from two secondary sources: a web search result quoting the NGA table, and the documentation page for the AHRS library, <https://ahrs.readthedocs.io/en/latest/geodesy/wgs84.html>, which prints all four. They agree with each other.
 
-**To do before v0.1:** check the four values against the primary NGA document.
+**Not done for v0.1:** the four values have not been checked against the primary NGA document. They are the published WGS 84 values and two secondary sources agree on them, but a check against NGA.STND.0036 itself is still to be made, and welcome (finding 5 in [VALIDATION.md](VALIDATION.md)).
 
 The NGA notes that GPS users use a slightly different GM (3.9860050e14 m^3/s^2). This project uses the WGS 84 value.
 
