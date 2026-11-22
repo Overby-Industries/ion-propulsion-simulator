@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(ion-propulsion-simulator LANGUAGES CXX VERSION 0.0.1)
+project(ion-propulsion-simulator LANGUAGES CXX VERSION 0.1.0)
 
 # abep -- an open, deterministic simulator of drag and air-breathing electric
 # propulsion in low Earth orbit. See docs/SPEC.md.

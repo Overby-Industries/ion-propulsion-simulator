@@ -1,6 +1,6 @@
 # How much power does an air-breathing thruster need to hold a low orbit?
 
-*A technical note on ABEP, an open simulator. Overby Industries. Version 0.1, draft of 22 November 2026. Code, data and every number below: [github.com/Overby-Industries/ion-propulsion-simulator](https://github.com/Overby-Industries/ion-propulsion-simulator) (Apache 2.0).*
+*A technical note on ABEP, an open simulator. Overby Industries. Version 0.1.0, 22 November 2026. Code, data and every number below: [github.com/Overby-Industries/ion-propulsion-simulator](https://github.com/Overby-Industries/ion-propulsion-simulator) (Apache 2.0).*
 
 ## Abstract
 

@@ -2,7 +2,7 @@
 
 What changed in each release. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Before 1.0 the settings, the CSV columns and the C++ interfaces may change in any release.
 
-## 0.1.0 (unreleased)
+## 0.1.0 (2026-11-22)
 
 The first release. The simulator answers one question: how much electrical power an air-breathing electric thruster needs to hold a satellite's altitude in low Earth orbit, *if* it makes a given thrust per watt and its intake catches a given share of the air. It is a sensitivity tool, not a thruster model.
 
