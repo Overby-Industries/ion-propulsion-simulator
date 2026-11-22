@@ -66,6 +66,17 @@ godot --headless --path viewer --quit-after 900 -s res://tests/view_test.gd     
 
 Both print how many checks ran and how many failed, and exit with 1 if any failed. What they cannot say is that it looks right. That was checked by eye, on pictures from the real renderer, which `tests/shot.gd` takes (it needs a window, off screen is enough; `godot --path viewer --resolution 1600x900 -s res://tests/shot.gd -- orbit_view.jpg thrust` writes `viewer/shots/orbit_view.jpg`, and it can pick a moment in `thrust`, `coast` or `eclipse` and `follow` the satellite). [`docs/VALIDATION.md`](../docs/VALIDATION.md), cases 23 and 24 and finding 20, says what was checked and what was found by looking.
 
+## The Windows download
+
+`deploy_to_itch.ps1`, at the root of the repository, makes the download for the [itch.io page](https://overby-industries.itch.io/ion-propulsion-simulator) and uploads it. What is in it: the viewer exported as one exe, with the bundled sample inside; `abep_run.exe`, built with MSVC with the C++ runtime linked in, so that nothing else has to be installed; a launcher, `Simulate and view.bat`, that runs `abep_run.exe` with the settings in `settings.txt` and opens the result in the viewer; `settings.txt`, which lists every setting of `abep_run` with its default and unit, each commented out, so that a user takes the `#` off a line and changes the number; a README; the Apache 2.0 licence; and the notice of the Godot Engine and of the components inside it, which `tools/dump_godot_licenses.gd` writes (an exported game carries the engine, and the engine's licence asks for its notice to travel with it). The text files that go in are in `package/`, and the export settings are in `export_presets.cfg`.
+
+```powershell
+powershell -File deploy_to_itch.ps1 -NoPush   # build and test everything, upload nothing
+powershell -File deploy_to_itch.ps1           # and push it to itch.io
+```
+
+It needs Godot 4.6.3 with its Windows export templates, Visual Studio's C++ tools and, to push, butler logged in to an account that may push to the page. Before it pushes it runs six tests on what it made: `abep_run.exe` writes its three files (17 columns, 72 samples for 0.05 days); the exported viewer starts, finds the sample inside itself and quits cleanly; the exported viewer plays a run that `abep_run.exe` wrote; the launcher runs the settings as shipped; the launcher reads a user's settings (a note after a number, a leading space, a comment, a blank line); and the launcher names a setting that does not exist. The page shows the version of `include/abep/version.hpp`, a dash and the commit's short hash (`-dirty` if there are uncommitted changes). The download is about 100 MiB, nearly all of it the Godot engine, and butler uploads only what changed after the first push. The programs are not signed, so Windows may warn about them; the download's README says so. The download is left in `viewer/builds/windows-release` (git-ignored).
+
 ## Files
 
 | | |
@@ -76,3 +87,4 @@ Both print how many checks ran and how many failed, and exit with 1 if any faile
 | `scripts/plot_strip.gd`, `scripts/planet_texture.gd` | the strip along the bottom, and the Earth's surface |
 | `sample/` | the bundled run. The `.import` files tell Godot not to treat the CSV files as translations |
 | `tests/` | the two test scripts, and `shot.gd` |
+| `export_presets.cfg`, `package/`, `tools/` | for the Windows download: the export settings, the launcher and README that go in it, and the script that writes Godot's notice |

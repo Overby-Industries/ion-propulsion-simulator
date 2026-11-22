@@ -4,3 +4,6 @@
 
 # Screenshots written by tests/shot.gd
 /shots/
+
+# What deploy_to_itch.ps1 builds, and uploads
+/builds/

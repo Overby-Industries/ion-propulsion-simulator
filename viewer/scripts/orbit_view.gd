@@ -512,6 +512,7 @@ func load_file(path: String) -> bool:
 		return false
 	message = ""
 	traj = fresh
+	print("ABEP orbit view: loaded %s (%d samples)" % [path, traj.count])   # for the log, and for the release script's smoke test
 	_build_path()
 	_plot.set_trajectory(traj)
 	_slider.max_value = traj.duration()
