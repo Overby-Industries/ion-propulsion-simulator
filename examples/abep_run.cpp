@@ -7,9 +7,14 @@
 // standard atmosphere, finds the time to decay with the thruster off and the thruster power that holds the altitude, and writes
 // samples.csv, orbits.csv and summary.csv into DIRECTORY (default abep_out). The columns are in docs/OUTPUT.md. The defaults are
 // illustrative, not data about any real satellite or thruster.
+//
+// On Windows, started by a double-click in Explorer, the program has a console window of its own that closes the moment it exits, so
+// the summary would flash by: it then says what it is and waits for Enter before it closes. From a command prompt or a script it
+// exits at once (ABEP_PAUSE=1 forces the wait, ABEP_PAUSE=0 turns it off).
 
 #include <cstddef>
 #include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <locale>
 #include <sstream>
@@ -22,6 +27,12 @@
 #include "abep/run_config.hpp"
 #include "abep/standard_atmosphere_1976.hpp"
 #include "abep/units.hpp"
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#endif
 
 namespace {
 
@@ -43,9 +54,58 @@ bool parse_number(const std::string& text, double& out) {
     return !in.fail() && in.peek() == std::char_traits<char>::eof();
 }
 
+// The first character of an environment variable, or 0 if it is not set.
+char first_character_of(const char* name) {
+#ifdef _WIN32
+    char buffer[8] = {0};
+    const DWORD length = GetEnvironmentVariableA(name, buffer, sizeof buffer);
+    return length > 0 && length < sizeof buffer ? buffer[0] : '\0';
+#else
+    const char* value = std::getenv(name);
+    return value != nullptr ? value[0] : '\0';
+#endif
+}
+
+#ifdef _WIN32
+// Whether a standard handle is a console, and not a file or a pipe.
+bool is_console(DWORD standard_handle) {
+    DWORD mode = 0;
+    return GetConsoleMode(GetStdHandle(standard_handle), &mode) != 0;
+}
+#endif
+
+// Whether to wait for Enter before exiting, so that what was printed can be read. On Windows that is when the program was started
+// by a double-click in Explorer: no other program is attached to its console, and its input and output are that console, which is a
+// window of its own that closes when the program exits. From a command prompt or a script the console is shared or the output is
+// redirected, and the answer is no. ABEP_PAUSE=1 forces it, and ABEP_PAUSE=0 turns it off.
+bool should_wait_for_enter() {
+    const char forced = first_character_of("ABEP_PAUSE");
+    if (forced == '1') return true;
+    if (forced == '0') return false;
+#ifdef _WIN32
+    DWORD attached[2];
+    return GetConsoleProcessList(attached, 2) == 1 && is_console(STD_INPUT_HANDLE) && is_console(STD_OUTPUT_HANDLE);
+#else
+    return false;
+#endif
+}
+
+void wait_for_enter() {
+    std::printf(
+        "\n"
+        "abep_run is a command-line program. It has just run one mission with the settings it was given (the defaults, if none)\n"
+        "and written its three CSV files into the folder named above. In the Windows download, edit settings.txt and double-click\n"
+        "\"Simulate and view.bat\" to run your own settings and see the result in the orbit view; \"abep_run.exe --help\", typed in\n"
+        "a command prompt, lists every setting.\n"
+        "\n"
+        "Press Enter to close this window. ");
+    std::fflush(stdout);
+    (void)std::getchar();
+}
+
 }  // namespace
 
-int main(int argc, char** argv) {
+int run(int argc, char** argv) {
     try {
         abep::RunSettings settings;
         std::string out_dir = "abep_out";
@@ -98,4 +158,11 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "abep_run: %s\n(abep_run --help lists the settings)\n", e.what());
         return 2;
     }
+}
+
+int main(int argc, char** argv) {
+    const bool wait = should_wait_for_enter();
+    const int code = run(argc, argv);
+    if (wait) wait_for_enter();
+    return code;
 }

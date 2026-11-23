@@ -24,6 +24,11 @@ TRY IT
    orbits.csv and summary.csv, are left in the folder my_run, to open in a
    spreadsheet or to read from Python. Each run replaces the last one.
 
+   abep_run.exe itself is a command-line program: double-clicking it runs the
+   default mission once, writes the three files into a folder named abep_out
+   and waits for Enter before its window closes. Use "Simulate and view.bat"
+   for your own settings.
+
    From a command prompt, abep_run.exe takes the same settings:
        abep_run.exe altitude_km=300 mass_kg=150 duration_days=3 out=my_run
    and "abep_run.exe --help" lists every setting. In the viewer, the Open...

@@ -15,6 +15,7 @@ Module two, step one: the atmosphere at low, moderate and high solar activity, s
 
 ### Changed
 
+- `abep_run.exe`, started by a double-click on Windows, waits for Enter before its console window closes, with a note on what it is and on `Simulate and view.bat` (the window used to flash by); from a command prompt or a script it exits at once, as before.
 - `simulate(settings)` takes the atmosphere from the setting; `simulate(settings, table)` is as it was. `abep_run` names the atmosphere in its first line when it is not the default.
 
 ### Known limits
