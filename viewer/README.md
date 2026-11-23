@@ -14,7 +14,7 @@ godot --path viewer -- my_run                # a folder with a samples.csv in it
 godot --path viewer -- my_run/samples.csv    # or the file itself
 ```
 
-Or press **Open...** in the window. It reads `summary.csv` and `orbits.csv` from the same folder when they are there (for the numbers of the whole run and the orbit number), and plays the file from its start.
+Or press **Open...** in the window. It reads `summary.csv` and `orbits.csv` from the same folder when they are there (for the numbers of the whole run and the orbit number), and plays the file from its start. **Run...** makes a run of your own, see [Running your own mission](#running-your-own-mission).
 
 The rendering is Godot's Forward+ renderer, which needs Vulkan. The Compatibility renderer has not been tried. A run of 30 days (43,200 samples, 10 MB) loaded in about two seconds and played at 60 frames a second on an Intel Iris Xe integrated GPU.
 
@@ -46,7 +46,19 @@ abep_run duration_days=1 sample_every=12 out=viewer/sample
 | The slider, or a click on the strip | go to a time |
 | **Follow** | look at the satellite, from close; drag to go round it |
 | **Reset view** | the home view, which is worked out from the orbit: 63 degrees off its axis, so that it is a tilted ring, and turned so that the lit side, the terminator and the shadow are in view |
+| **Run...** | open the window that runs `abep_run` with settings of your own and plays the result |
 | **Open...** | choose another `samples.csv` |
+
+## Running your own mission
+
+**Run...** opens a window (drag it where you like) with the settings that people change first: the orbit altitude, the satellite mass, the frontal area, the thrust per electrical power, the atmosphere (the 1976 standard, or ECSS's low, moderate or high solar activity) and the length of the run. The fields start at `abep_run`'s own defaults, which the window reads from `abep_run --help`, so that they cannot differ from them. **More settings...** takes any other setting as `name=value`, one to a line, and **List all the settings** shows them. **Run** starts `abep_run` with the numbers and, when it is done, plays the run from its start, with its summary in the panel at the top left; the window shows `abep_run`'s own summary lines, or its own words when it refuses a setting. **Stop** ends a run that is going: a high orbit takes several seconds, because `abep_run` flies it for up to ten years to see whether it decays. The files of the last run are in the viewer's user folder (**Show the files** opens it), and every run replaces them.
+
+`abep_run` is the program that the environment variable `ABEP_RUN` names, or `abep_run(.exe)` next to the viewer (as in the Windows download), or the one in `build/` of this repository. The viewer starts it as a process of its own, so that the view keeps turning while it works, and tells it never to wait for Enter. The same can be done from the command line, which is also how the release script tests the download:
+
+```bash
+godot --path viewer -- altitude_km=300 mass_kg=150 duration_days=3      # runs abep_run with these settings and plays the result
+godot --path viewer -- out=my_run altitude_km=300 --then-quit           # into my_run, and leave when it is done (exit code 1 if the run failed)
+```
 
 ## What it assumes
 
@@ -62,9 +74,12 @@ Run by hand, with Godot on the path. They are not part of `ctest` or the CI, whi
 ```bash
 godot --headless --path viewer --quit-after 900 -s res://tests/trajectory_test.gd   # reading the files, and what the view asks of them
 godot --headless --path viewer --quit-after 900 -s res://tests/view_test.gd         # the scene: the satellite, the plume, the camera, the Earth's turn, bad files
+ABEP_RUN=build/abep_run godot --headless --path viewer -s res://tests/run_panel_test.gd   # the Run window, with a real abep_run
 ```
 
-Both print how many checks ran and how many failed, and exit with 1 if any failed. What they cannot say is that it looks right. That was checked by eye, on pictures from the real renderer, which `tests/shot.gd` takes (it needs a window, off screen is enough; `godot --path viewer --resolution 1600x900 -s res://tests/shot.gd -- orbit_view.jpg thrust` writes `viewer/shots/orbit_view.jpg`, and it can pick a moment in `thrust`, `coast` or `eclipse` and `follow` the satellite). [`docs/VALIDATION.md`](../docs/VALIDATION.md), cases 23 and 24 and finding 20, says what was checked and what was found by looking.
+The third one starts `abep_run` for real (ABEP_RUN names a built one) and takes some seconds, so it has no `--quit-after`: it ends when it is done, and stops itself after four minutes. It checks that the window reads `abep_run`'s defaults, turns the fields into its arguments and refuses what cannot be a setting, runs a mission and has the view play it, shows `abep_run`'s words when it refuses a setting, stops a long run at once, and copes with there being no `abep_run`.
+
+Both print how many checks ran and how many failed, and exit with 1 if any failed. What they cannot say is that it looks right. That was checked by eye, on pictures from the real renderer, which `tests/shot.gd` takes (it needs a window, off screen is enough; `godot --path viewer --resolution 1600x900 -s res://tests/shot.gd -- orbit_view.jpg thrust` writes `viewer/shots/orbit_view.jpg`, and it can pick a moment in `thrust`, `coast` or `eclipse`, `follow` the satellite, and show the Run window in its states: `panel`, `panel-error`, `panel-running`, `panel-more`). [`docs/VALIDATION.md`](../docs/VALIDATION.md), cases 23 and 24 and finding 20, says what was checked and what was found by looking.
 
 ## The Windows download
 
@@ -75,7 +90,7 @@ powershell -File deploy_to_itch.ps1 -NoPush   # build and test everything, uploa
 powershell -File deploy_to_itch.ps1           # and push it to itch.io
 ```
 
-It needs Godot 4.6.3 with its Windows export templates, Visual Studio's C++ tools and, to push, butler logged in to an account that may push to the page. Before it pushes it runs seven tests on what it made: `abep_run.exe` writes its three files (17 columns, 72 samples for 0.05 days); the exported viewer starts, finds the sample inside itself and quits cleanly; the exported viewer plays a run that `abep_run.exe` wrote; the launcher runs the settings as shipped; the launcher reads a user's settings (a note after a number, a leading space, a comment, a blank line); the launcher names a setting that does not exist; and `abep_run.exe --ask`, given answers on its input, uses them and offers the orbit view, which it can only do if it finds the viewer's exe next to itself. The page shows the version of `include/abep/version.hpp`, a dash and the commit's short hash (`-dirty` if there are uncommitted changes). The download is about 100 MiB, nearly all of it the Godot engine, and butler uploads only what changed after the first push. The programs are not signed, so Windows may warn about them; the download's README says so. The download is left in `viewer/builds/windows-release` (git-ignored).
+It needs Godot 4.6.3 with its Windows export templates, Visual Studio's C++ tools and, to push, butler logged in to an account that may push to the page. Before it pushes it runs eight tests on what it made: `abep_run.exe` writes its three files (17 columns, 72 samples for 0.05 days); the exported viewer starts, finds the sample inside itself and quits cleanly; the exported viewer plays a run that `abep_run.exe` wrote; the launcher runs the settings as shipped; the launcher reads a user's settings (a note after a number, a leading space, a comment, a blank line); the launcher names a setting that does not exist; and `abep_run.exe --ask`, given answers on its input, uses them and offers the orbit view, which it can only do if it finds the viewer's exe next to itself; and the exported viewer, given settings after `--`, starts the `abep_run.exe` next to it and plays what that wrote, which is what the Run window does. The page shows the version of `include/abep/version.hpp`, a dash and the commit's short hash (`-dirty` if there are uncommitted changes). The download is about 100 MiB, nearly all of it the Godot engine, and butler uploads only what changed after the first push. The programs are not signed, so Windows may warn about them; the download's README says so. The download is left in `viewer/builds/windows-release` (git-ignored).
 
 ## Files
 
@@ -83,8 +98,9 @@ It needs Godot 4.6.3 with its Windows export templates, Visual Studio's C++ tool
 |---|---|
 | `project.godot`, `scenes/orbit_view.tscn` | the project, and one scene with one script |
 | `scripts/orbit_view.gd` | the scene: the world, the interface, the camera |
+| `scripts/run_panel.gd` | the Run window: the fields, the `abep_run` process, its answer |
 | `scripts/trajectory.gd` | one `samples.csv` (and its neighbours) as arrays, and the questions asked of it: no scene, so it is tested alone |
 | `scripts/plot_strip.gd`, `scripts/planet_texture.gd` | the strip along the bottom, and the Earth's surface |
 | `sample/` | the bundled run. The `.import` files tell Godot not to treat the CSV files as translations |
-| `tests/` | the two test scripts, and `shot.gd` |
+| `tests/` | the three test scripts, and `shot.gd` |
 | `export_presets.cfg`, `package/`, `tools/` | for the Windows download: the export settings, the launcher and README that go in it, and the script that writes Godot's notice |

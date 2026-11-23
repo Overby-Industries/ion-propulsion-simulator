@@ -24,12 +24,18 @@ TRY IT
    orbits.csv and summary.csv, are left in the folder my_run, to open in a
    spreadsheet or to read from Python. Each run replaces the last one.
 
+   Or, in the viewer, press "Run...": a window opens with the altitude, the
+   mass, the frontal area, the thrust per power, the atmosphere and the length
+   of the run. Change the numbers, press Run, and the viewer runs abep_run.exe
+   with them and plays the result. "More settings..." takes any other setting
+   of settings.txt, one name=value to a line, and Stop ends a run that takes
+   long (a high orbit does).
+
    abep_run.exe can also ask for the settings itself. Double-click it and
-   answer its questions: the altitude, the mass, the frontal area, the thrust
-   per power, the atmosphere and the length of the run (press Enter to keep
-   the number in the brackets). It runs the mission, writes the three files
-   into a folder named abep_out, and asks whether to show the run in the
-   orbit view; Enter says yes. Its window waits for Enter before it closes.
+   answer its questions (press Enter to keep the number in the brackets). It
+   runs the mission, writes the three files into a folder named abep_out, and
+   asks whether to show the run in the orbit view; Enter says yes. Its window
+   waits for Enter before it closes.
 
    From a command prompt, abep_run.exe takes the same settings:
        abep_run.exe altitude_km=300 mass_kg=150 duration_days=3 out=my_run

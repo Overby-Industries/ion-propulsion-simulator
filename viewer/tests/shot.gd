@@ -1,12 +1,14 @@
 extends SceneTree
 ## A frame of the orbit view with the real renderer, for looking at it (and for the README picture):
 ##
-##   godot --path viewer --resolution 1600x900 -s res://tests/shot.gd -- <name> [thrust|coast|eclipse] [yaw pitch dist] [follow]
+##   godot --path viewer --resolution 1600x900 -s res://tests/shot.gd -- <name> [thrust|coast|eclipse] [yaw pitch dist] [follow] [panel...]
 ##
 ## Saves viewer/shots/<name>.png (that folder is git-ignored); a name ending in .jpg is saved as a small JPEG. The second argument
 ## picks a moment that is in that state: the first one after two hours with the satellite on the side of the Earth the camera sees
 ## and clear of the panels (`thrust` is the default). `follow` has the camera follow the satellite, as the checkbox does: from
-## alongside it, unless a yaw, pitch and distance are given.
+## alongside it, unless a yaw, pitch and distance are given. `panel` opens the Run panel after a run from it (300 km, 150 kg; ABEP_RUN
+## has to name an abep_run); `panel-error` shows abep_run refusing a setting, `panel-running` a run that is going, and `panel-more` the
+## box of other settings with the list of them.
 
 const Trajectory = preload("res://scripts/trajectory.gd")
 
@@ -19,12 +21,42 @@ func _run() -> void:
 	var args := Array(OS.get_cmdline_user_args())
 	var follow := args.has("follow")
 	args.erase("follow")
+	var panel_mode := ""
+	for a in args.duplicate():
+		if str(a).begins_with("panel"):
+			panel_mode = a
+			args.erase(a)
 	var shot_name: String = args[0] if args.size() > 0 else "orbit_view"
 	var want: String = args[1] if args.size() > 1 else "thrust"
 	var view: Node3D = (load("res://scenes/orbit_view.tscn") as PackedScene).instantiate()
 	root.add_child(view)
 	await process_frame
 	view.playing = false
+	if panel_mode != "":
+		var panel: Window = view.run_panel()
+		if OS.get_environment("ABEP_RUN") != "":
+			panel.abep_run_path = OS.get_environment("ABEP_RUN")
+		panel.open()
+		panel.set_field("altitude_km", "300")
+		panel.set_field("mass_kg", "150")
+		match panel_mode:
+			"panel-more":      # the box of other settings open, and the list of all of them
+				panel._more_button.button_pressed = true
+				panel.set_extra_text("inclination_deg=98\nthruster_power_w=500")
+				panel._show_settings_list()
+			"panel-error":     # abep_run refusing a setting
+				panel.set_extra_text("nonsense=1")
+				panel.start_run()
+				await panel.finished
+			"panel-running":   # a run that takes a while, caught while it is going
+				panel.set_field("altitude_km", "800")
+				panel.start_run()
+				await create_timer(4.5).timeout
+			_:                 # a finished run
+				panel.set_extra_text("decay_max_years=0.02")
+				panel.start_run()
+				await panel.finished
+				view.playing = false
 	var t: Trajectory = view.traj
 	var camera: Camera3D = view._camera
 	var screen: Vector2 = root.get_visible_rect().size
