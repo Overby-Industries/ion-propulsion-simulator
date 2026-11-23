@@ -24,15 +24,19 @@ TRY IT
    orbits.csv and summary.csv, are left in the folder my_run, to open in a
    spreadsheet or to read from Python. Each run replaces the last one.
 
-   abep_run.exe itself is a command-line program: double-clicking it runs the
-   default mission once, writes the three files into a folder named abep_out
-   and waits for Enter before its window closes. Use "Simulate and view.bat"
-   for your own settings.
+   abep_run.exe can also ask for the settings itself. Double-click it and
+   answer its questions: the altitude, the mass, the frontal area, the thrust
+   per power, the atmosphere and the length of the run (press Enter to keep
+   the number in the brackets). It runs the mission, writes the three files
+   into a folder named abep_out, and asks whether to show the run in the
+   orbit view; Enter says yes. Its window waits for Enter before it closes.
 
    From a command prompt, abep_run.exe takes the same settings:
        abep_run.exe altitude_km=300 mass_kg=150 duration_days=3 out=my_run
-   and "abep_run.exe --help" lists every setting. In the viewer, the Open...
-   button plays any samples.csv.
+   "abep_run.exe --ask" asks the questions there too, "--view" opens the
+   result in the orbit view when the run is done, and "abep_run.exe --help"
+   lists every setting. In the viewer, the Open... button plays any
+   samples.csv.
 
 
 WHAT TO KEEP IN MIND
@@ -44,8 +48,10 @@ WHAT TO KEEP IN MIND
   the duty cycle would be Y"), not as evidence that a thruster will work.
 - The defaults are illustrative, not data about any real satellite or
   thruster.
-- One fixed atmosphere (the 1976 US Standard Atmosphere), gravity with J2 and
-  nothing else, a fixed frontal area, no attitude dynamics. Real density
+- The air is the 1976 US Standard Atmosphere unless you choose another: the
+  atmosphere setting, 1 to 4, picks an average for low, moderate or high solar
+  activity (ECSS-E-ST-10-04C), to show how far an answer moves. Gravity with
+  J2 and nothing else, a fixed frontal area, no attitude dynamics. Real density
   varies strongly with solar activity, so decay times are only indicative.
 - The flight modes (SAFE, CHARGE, COAST, THRUST, FAULT) follow thresholds that
   are operating policy, and the thruster's thermal numbers are assumptions.
@@ -65,3 +71,10 @@ LICENCES
 ABEP is under the Apache License 2.0 (LICENSE.txt). The orbit view is made with
 the Godot Engine (MIT licence); licenses\Godot.txt has its notice and those of
 the components inside it.
+
+The profiles that the atmosphere setting 1 to 4 selects are the densities of
+Table G-4 of ECSS-E-ST-10-04C (Space environment, Annex G, from JB-2006),
+copyright 2008 European Space Agency for the members of ECSS, reproduced with
+attribution. The standard, as far as we could read it, grants no licence for
+reuse, and the Apache License above does not extend to those numbers. The
+source code at the address above says more (docs/ATMOSPHERE.md).

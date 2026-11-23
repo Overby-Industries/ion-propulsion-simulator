@@ -313,6 +313,24 @@ try {
         Write-Host $launched.Text
         throw "The launcher should fail, naming the setting, on a setting that does not exist."
     }
+
+    Write-Host "Test 7: abep_run.exe asks its questions, and finds the orbit view next to itself..."
+    # The answers come from a file, as if typed: 300 km, the other questions left as they are but the length (0.05 days), one more
+    # setting, and no to the orbit view (so that no window opens). ABEP_VIEWER is emptied: the orbit view has to be found next to
+    # abep_run.exe, where the download keeps it.
+    $answers = Join-Path $workDir "answers.txt"
+    [System.IO.File]::WriteAllText($answers, "300`r`n`r`n`r`n`r`n`r`n0.05`r`ndecay_max_years=0.02`r`n`r`nn`r`n", (New-Object System.Text.UTF8Encoding($false)))
+    $askedRun = Join-Path $workDir "asked"
+    $asked = Invoke-Captured "cmd.exe" "/c call `"$AbepRun`" --ask out=`"$askedRun`" < `"$answers`"" $workDir 120 @{ ABEP_VIEWER = ""; ABEP_PAUSE = "0" }
+    if ($asked.ExitCode -ne 0) { Write-Host $asked.Text; throw "abep_run.exe --ask exited with code $($asked.ExitCode)." }
+    if (-not $asked.Text.Contains("Show this run in the orbit view? [Y/n]")) {
+        Write-Host $asked.Text
+        throw "abep_run.exe --ask did not offer the orbit view: it should find $ExeName next to itself."
+    }
+    $samples = Read-Samples (Join-Path $askedRun "samples.csv")
+    if ([double]$samples.First["altitude_km"] -ne 300.0 -or $samples.Count -ne 72) {
+        throw "The answers (300 km, 0.05 days) should give 72 samples from 300 km; got $($samples.Count) from $($samples.First['altitude_km']) km."
+    }
 } finally {
     if ($workDir -and (Test-Path -LiteralPath $workDir)) { Remove-Item -LiteralPath $workDir -Recurse -Force -ErrorAction SilentlyContinue }
 }
