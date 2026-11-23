@@ -91,6 +91,20 @@ if(ABEP_BUILD_EXAMPLES)
         add_test(NAME abep_run_atmosphere COMMAND abep_run atmosphere=2 duration_days=0.05 out=${CMAKE_CURRENT_BINARY_DIR}/abep_run_atmosphere)
         add_test(NAME abep_run_bad_atmosphere COMMAND abep_run atmosphere=9 duration_days=0.05 out=${CMAKE_CURRENT_BINARY_DIR}/abep_run_bad_atmosphere)
         set_tests_properties(abep_run_bad_atmosphere PROPERTIES WILL_FAIL TRUE)
+
+        # The questions (--ask, and a double-click on Windows) and the start of the orbit view (--view). A stand-in for the orbit view, which
+        # is a Godot program that the tests must not need, and a script that gives abep_run its answers on its standard input.
+        add_executable(abep_fake_viewer tests/tools/fake_viewer.cpp)
+        target_compile_features(abep_fake_viewer PRIVATE cxx_std_17)
+        set_target_properties(abep_fake_viewer PROPERTIES CXX_EXTENSIONS OFF)
+        if(MSVC)
+            target_compile_options(abep_fake_viewer PRIVATE /W4 /permissive- /utf-8)
+        else()
+            target_compile_options(abep_fake_viewer PRIVATE -Wall -Wextra -Wpedantic -Wshadow -Wconversion)
+        endif()
+        add_test(NAME abep_run_ask
+                 COMMAND ${CMAKE_COMMAND} -DABEP_RUN=$<TARGET_FILE:abep_run> -DFAKE_VIEWER=$<TARGET_FILE:abep_fake_viewer>
+                         -DWORK=${CMAKE_CURRENT_BINARY_DIR}/abep_run_ask -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/abep_run_ask.cmake)
     endif()
 endif()
 

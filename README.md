@@ -33,7 +33,7 @@ Run a mission and write its results as CSV (the defaults are illustrative, not d
 ./build/abep_run altitude_km=300 mass_kg=150 duration_days=3 out=my_run
 ```
 
-That writes `samples.csv`, `orbits.csv` and `summary.csv` into `my_run/`; the columns, and how the time to decay and the power to hold the altitude are defined, are in [`docs/OUTPUT.md`](docs/OUTPUT.md).
+That writes `samples.csv`, `orbits.csv` and `summary.csv` into `my_run/`; the columns, and how the time to decay and the power to hold the altitude are defined, are in [`docs/OUTPUT.md`](docs/OUTPUT.md). `abep_run --ask` asks for the altitude, the mass and a few more settings instead, and `--view` plays the run in the orbit view when it is done (the Windows download keeps the orbit view next to `abep_run.exe`; elsewhere `ABEP_VIEWER` names it).
 
 To watch a run, play the folder back in the orbit view (Godot 4.6; [`viewer/README.md`](viewer/README.md) says how it works and what it assumes):
 

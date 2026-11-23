@@ -12,9 +12,11 @@ Module two, step one: the atmosphere at low, moderate and high solar activity, s
 - **A monotone cubic interpolation** option for `DensityTable`, used by the 20 km rows of the new tables. The 1976 table keeps its log-linear rule, so every earlier result is unchanged.
 - **`abep_sweep` can sweep the atmosphere** (`atmosphere=0:4:5`), and `write_sweep_csv` has a form without a table for it ([SWEEPS.md](docs/SWEEPS.md)).
 - Validation cases 30 to 35 and findings 25 to 30 ([VALIDATION.md](docs/VALIDATION.md)).
+- **`abep_run` asks, and starts the orbit view.** `abep_run --ask` asks for the altitude, the mass, the frontal area, the thrust per power, the atmosphere and the length of the run, one at a time, and takes any other setting as `name=value`; when the run is done it offers to show it in the orbit view, and `--view` does so without asking. The orbit view is `ABEPOrbitView.exe` next to `abep_run.exe` (where the Windows download keeps it) or the program that `ABEP_VIEWER` names ([OUTPUT.md](docs/OUTPUT.md)). A test feeds it answers on its standard input and checks what it starts (`tests/abep_run_ask.cmake`).
 
 ### Changed
 
+- `abep_run.exe`, started by a double-click on Windows, asks its questions (`--ask`, above) and waits for Enter before its console window closes (the window used to flash by); from a command prompt or a script it neither asks nor waits, as before.
 - `simulate(settings)` takes the atmosphere from the setting; `simulate(settings, table)` is as it was. `abep_run` names the atmosphere in its first line when it is not the default.
 
 ### Known limits

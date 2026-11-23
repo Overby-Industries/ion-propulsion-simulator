@@ -17,10 +17,20 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ./build/abep_run                                   # the defaults, files into ./abep_out
 ./build/abep_run altitude_km=300 mass_kg=150 duration_days=3 out=my_run
+./build/abep_run --ask                             # asks for the altitude, the mass and a few more settings
+./build/abep_run altitude_km=300 --view            # and opens the run in the orbit view when it is done
 ./build/abep_run --help                            # every setting, its default and its meaning
 ```
 
-Each argument is `name=value`; `out=` names the directory. A name that is not a setting, a value that is not a number, or a value that makes no sense stops the run with a message that names it (exit code 2). The program prints a short summary and the directory it wrote to. `ctest` runs it once, for a short run, so that it is built and exercised on every platform the tests are.
+Each argument is `name=value`; `out=` names the directory. A name that is not a setting, a value that is not a number, or a value that makes no sense stops the run with a message that names it (exit code 2). The program prints a short summary and the directory it wrote to. `ctest` runs it for a short run, so that it is built and exercised on every platform the tests are, and a script ([`tests/abep_run_ask.cmake`](../tests/abep_run_ask.cmake)) gives it answers on its standard input and checks what it starts.
+
+### Questions, and the orbit view
+
+`--ask` asks for the orbit altitude, the satellite mass, the frontal area, the thrust per electrical power, the atmosphere and the length of the run, one at a time. Enter keeps the value in brackets (a `name=value` argument on the same command line is the value that its question starts from). An answer that is not a number, or that makes no sense, is said to be wrong and asked again; the end of the input leaves the rest as they were. Then any other setting can be typed as `name=value` (`?` lists them all, `out=` names the directory), and an empty line runs the mission. The program prints the command line that the answers add up to, so that the run can be repeated without the questions.
+
+When the run is done, `abep_run` offers to show it in the orbit view ([`viewer/`](../viewer/README.md)); `--view` does so without asking. The orbit view is the program that the environment variable `ABEP_VIEWER` names or, on Windows, `ABEPOrbitView.exe` in the folder of `abep_run.exe`, which is where the Windows download keeps it. `abep_run` starts it as `ABEPOrbitView -- FOLDER` (FOLDER the full path of the results) and does not wait for it. If there is no orbit view, nobody is asked about one, and `--view` writes the files and then stops with a message (exit code 2).
+
+**Started by a double-click on Windows,** `abep_run.exe` has a console window of its own, which closes the moment the program exits, so it asks its questions as `--ask` does and, at the end, waits for Enter before the window closes. It takes that for a double-click when no other program is attached to its console and its input and output are that console; a command prompt, a script, a pipe or `ctest` never makes it ask or wait. `ABEP_PAUSE=1` forces the double-click behaviour (the tests use it) and `ABEP_PAUSE=0` turns it off.
 
 ### The settings
 
