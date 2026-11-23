@@ -5,13 +5,16 @@ extends Node3D
 ##
 ##   godot --path viewer                           # plays the bundled sample, sample/samples.csv
 ##   godot --path viewer -- path/to/samples.csv    # or a file of yours, or a folder that holds one
+##   godot --path viewer -- altitude_km=300 mass_kg=150   # or runs abep_run with these settings (the Run... panel does the same)
 ##
 ## Left-drag orbits the camera, the wheel zooms, Space plays and pauses, the strip at the bottom shows the whole run and takes
-## clicks. One scene unit is 1000 km; the Sun is fixed along +x, as in the model.
+## clicks, and Run... opens a panel that runs abep_run with settings of your own and plays the result. One scene unit is 1000 km;
+## the Sun is fixed along +x, as in the model.
 
 const Trajectory = preload("res://scripts/trajectory.gd")
 const PlotStrip = preload("res://scripts/plot_strip.gd")
 const PlanetTexture = preload("res://scripts/planet_texture.gd")
+const RunPanel = preload("res://scripts/run_panel.gd")
 
 const KM := 0.001                       ## scene units per km
 const EARTH_ROTATION := 7.292115e-5     ## rad/s, the rate the model's atmosphere turns at (constants.hpp)
@@ -82,6 +85,9 @@ var _turns_box: CheckBox
 var _shadow_box: CheckBox
 var _speed_buttons: Array[Button] = []
 var _dialog: FileDialog
+var _run_open_button: Button
+var _run_panel: Window
+var _quit_when_run_is_done := false     ## --then-quit on the command line: for scripts and tests that start a run and look at it
 var _updating_slider := false
 
 
@@ -89,17 +95,26 @@ func _ready() -> void:
 	_build_world()
 	_build_ui()
 	_apply_camera()
-	# A file or a folder named after `--` is played; anything else on the command line (a test script's own arguments, say) is not
+	# A file or a folder named after `--` is played; name=value arguments are settings for abep_run, which is run and its result
+	# played (--then-quit leaves when it is done); anything else on the command line (a test script's own arguments, say) is not
 	# for this scene.
 	var path := SAMPLE
+	var named_file := false
+	var settings := PackedStringArray()
 	for arg in OS.get_cmdline_user_args():
-		if arg.ends_with(".csv"):
+		if arg == "--then-quit":
+			_quit_when_run_is_done = true
+		elif not named_file and arg.ends_with(".csv"):
 			path = arg
-			break
-		if DirAccess.dir_exists_absolute(arg):
+			named_file = true
+		elif not named_file and DirAccess.dir_exists_absolute(arg):
 			path = arg.path_join("samples.csv")
-			break
+			named_file = true
+		elif arg.find("=") > 0:
+			settings.append(arg)
 	load_file(path)
+	if not settings.is_empty() and not _run_panel.start_run_with(settings) and _quit_when_run_is_done:
+		get_tree().quit(1)
 
 
 func _process(delta: float) -> void:
@@ -441,6 +456,11 @@ func _build_ui() -> void:
 	var bar := HBoxContainer.new()
 	bar.add_theme_constant_override("separation", 8)
 	bar_panel.add_child(bar)
+	_run_open_button = Button.new()
+	_run_open_button.text = "Run..."
+	_run_open_button.tooltip_text = "Run abep_run with settings of your own, and play the result"
+	_run_open_button.pressed.connect(_on_run_pressed)
+	bar.add_child(_run_open_button)
 	var open_button := Button.new()
 	open_button.text = "Open..."
 	open_button.pressed.connect(_on_open_pressed)
@@ -496,6 +516,10 @@ func _build_ui() -> void:
 	_dialog.size = Vector2i(820, 520)
 	_dialog.file_selected.connect(load_file)
 	add_child(_dialog)
+
+	_run_panel = RunPanel.new()
+	_run_panel.finished.connect(_on_run_finished)
+	add_child(_run_panel)
 
 	_sync_buttons()
 
@@ -647,6 +671,28 @@ func _on_open_pressed() -> void:
 	_dialog.popup_centered()
 
 
+func _on_run_pressed() -> void:
+	_run_panel.toggle()
+
+
+## The Run panel's mission is done: a good run is played from its start; a failed one leaves what was showing, and the panel says
+## why. With --then-quit on the command line the viewer leaves, with 0 for a run that played and 1 for one that did not.
+func _on_run_finished(ok: bool, samples_path: String) -> void:
+	var played := false
+	if ok:
+		played = load_file(samples_path)
+		if played:
+			playing = true
+			_sync_buttons()
+	if _quit_when_run_is_done:
+		get_tree().quit(0 if played else 1)
+
+
+## The Run panel (a Window), for tests and scripts.
+func run_panel() -> Window:
+	return _run_panel
+
+
 func _on_scrubbed(t: float) -> void:
 	set_time(t)
 
@@ -691,7 +737,7 @@ func info_text() -> String:
 	if message != "":
 		lines.append("[color=#ff7a66]%s[/color]" % message)
 	if traj.count < 2:
-		lines.append("Open a samples.csv written by abep_run.")
+		lines.append("Open a samples.csv written by abep_run, or press Run....")
 		return "\n".join(lines)
 	lines.append("[color=#8d9bb5]%s[/color]" % traj.source.get_file())
 	var m := traj.mode_at(time_s)

@@ -41,6 +41,8 @@ To watch a run, play the folder back in the orbit view (Godot 4.6; [`viewer/READ
 godot --path viewer -- my_run
 ```
 
+Its **Run...** button opens a window with a few fields (the altitude, the mass, the atmosphere...), runs `abep_run` with them, and plays the result.
+
 ![The orbit view playing the bundled sample: a satellite thrusting in sunlight](docs/orbit_view.jpg)
 
 To see how the power to hold the altitude depends on the orbit and the thruster, sweep settings and write one row of results per point ([`docs/SWEEPS.md`](docs/SWEEPS.md) has the columns and two worked tables):

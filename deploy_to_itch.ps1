@@ -331,6 +331,21 @@ try {
     if ([double]$samples.First["altitude_km"] -ne 300.0 -or $samples.Count -ne 72) {
         throw "The answers (300 km, 0.05 days) should give 72 samples from 300 km; got $($samples.Count) from $($samples.First['altitude_km']) km."
     }
+
+    Write-Host "Test 8: the exported viewer runs abep_run.exe itself, as its Run window does, and plays the result..."
+    # Settings after -- are what the Run window would send: the viewer starts the abep_run.exe next to its exe with them, and plays
+    # what it wrote. --then-quit makes it leave when that is done (exit code 1 if the run failed), so that no frame count has to be
+    # guessed; --quit-after is only the safety stop.
+    $panelRun = Join-Path $workDir "panel_run"
+    $viewerRun = Invoke-Captured $BuildExe "--headless --quit-after 100000 -- out=`"$panelRun`" duration_days=0.05 decay_max_years=0.02 --then-quit" $BuildDir 180
+    if ($viewerRun.ExitCode -ne 0 -or $viewerRun.Text -match "ERROR") {
+        Write-Host $viewerRun.Text
+        throw "The exported viewer could not run abep_run.exe and play the result (exit code $($viewerRun.ExitCode))."
+    }
+    if ($viewerRun.Text -notmatch 'ABEP orbit view: loaded .*panel_run.*samples\.csv \(72 samples\)') {
+        Write-Host $viewerRun.Text
+        throw "The exported viewer did not play the run that it started."
+    }
 } finally {
     if ($workDir -and (Test-Path -LiteralPath $workDir)) { Remove-Item -LiteralPath $workDir -Recurse -Force -ErrorAction SilentlyContinue }
 }
